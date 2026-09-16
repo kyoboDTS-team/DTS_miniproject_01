@@ -30,3 +30,6 @@ replay_pid*
 
 .gradle/
 build/
+
+# DB 접속 정보 보안
+config/db.properties

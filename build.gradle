@@ -12,4 +12,7 @@ repositories {
 dependencies {
     // PostgreSQL JDBC 드라이버 자동 다운로드
     implementation 'org.postgresql:postgresql:42.7.3'
+
+    // MyBatis 추가
+    implementation 'org.mybatis:mybatis:3.5.15'
 }
