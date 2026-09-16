@@ -27,3 +27,6 @@ replay_pid*
 *.iml
 *.xml
 .omc/
+
+.gradle/
+build/
