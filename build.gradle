@@ -1,0 +1,15 @@
+plugins {
+    id 'java'
+}
+
+group = 'com.terminalmarket'
+version = '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    // PostgreSQL JDBC 드라이버 자동 다운로드
+    implementation 'org.postgresql:postgresql:42.7.3'
+}
