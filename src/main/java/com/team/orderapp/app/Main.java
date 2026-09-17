@@ -1,6 +1,8 @@
 package com.team.orderapp.app;
 
+import com.team.orderapp.auth.SignupMenu;
 import com.team.orderapp.common.DbConnectionFactory;
+import com.team.orderapp.customer.CustomerMenu;
 import com.team.orderapp.product.Product;
 import com.team.orderapp.product.ProductDao;
 import org.apache.ibatis.session.SqlSession;
@@ -15,6 +17,11 @@ public class Main {
     public static void main(String[] args) {
         RunOrderSystem();
         BootstrapApplication(args);
+
+        // ===== 이태은 개인 테스트용 임시 코드 (테스트 완료, 주석 처리해둠) =====
+        // new CustomerMenu().DisplayMenu();
+        // new SignupMenu().SignUp();
+        // ===== 임시 테스트 코드 끝 =====
     }
 
     private static void RunOrderSystem() {
