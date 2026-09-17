@@ -1,30 +1,30 @@
 package com.team.orderapp.app;
 
-import com.team.orderapp.common.MyBatisFactory;
+import com.team.orderapp.common.DbConnectionFactory;
+import com.team.orderapp.product.Product;
+import com.team.orderapp.product.ProductDao;
 import org.apache.ibatis.session.SqlSession;
 
-import com.team.orderapp.mapper.ProductMapper;
-import com.team.orderapp.service.ProductService;
+import java.util.List;
 
 /**
  * 애플리케이션 진입점(Entry Point) 클래스입니다.
- * 메인 메서드는 간소화되어 있으며, 실제 실행 흐름은 MainMenu 및 헬퍼 메서드로 위임됩니다.
  */
 public class Main {
 
-    public static void main(String[] InArgs) {
+    public static void main(String[] args) {
         RunOrderSystem();
-        BootstrapApplication(InArgs);
+        BootstrapApplication(args);
     }
 
     private static void RunOrderSystem() {
-        if (MyBatisFactory.GetFactory() == null) {
+        if (DbConnectionFactory.GetFactory() == null) {
             System.out.println("MyBatisFactory가 초기화되지 않았습니다. config/db.properties 설정을 확인해 주세요.");
             return;
         }
 
-        try (SqlSession session = MyBatisFactory.GetFactory().openSession()) {
-            ProductMapper mapper = session.getMapper(ProductMapper.class);
+        try (SqlSession session = DbConnectionFactory.GetFactory().openSession()) {
+            ProductDao mapper = session.getMapper(ProductDao.class);
 
 //            // 1. 헬퍼 함수로 상품 추가 (INSERT)
 //            ProductService.AddNewProduct(mapper, "스테인리스 텀블러", 15000);
@@ -33,23 +33,27 @@ public class Main {
 //            // 2. DB에 변경사항 도장 쾅! (이걸 안 하면 등록 안 됨)
 //            session.commit();
 
-            // 3. 헬퍼 함수로 전체 목록 데려와서 출력 (SELECT)
-            ProductService.ShowAllProducts(mapper);
+            // 3. 전체 목록 데려와서 출력 (SELECT)
+            List<Product> products = mapper.GetAllProducts();
+            System.out.println("\n=== 등록된 상품 목록 ===");
+            if (products == null || products.isEmpty()) {
+                System.out.println("(등록된 상품이 없습니다.)");
+            } else {
+                System.out.println("조회된 상품 개수: " + products.size());
+            }
 
         } catch (Exception e) {
             System.out.println("시스템 오류: " + e.getMessage());
         }
     }
+
     /**
      * 애플리케이션 초기화 및 실행 흐름을 시작하는 헬퍼 메서드입니다.
      *
-     * @param InArgs 커맨드라인 인자 배열
+     * @param args 커맨드라인 인자 배열
      */
-    private static void BootstrapApplication(String[] InArgs) {
-        // 애플리케이션 시작 배너 출력 및 MainMenu 위임
+    private static void BootstrapApplication(String[] args) {
         PrintStartupBanner();
-        MainMenu mainMenu = new MainMenu();
-        mainMenu.Run();
     }
 
     /**

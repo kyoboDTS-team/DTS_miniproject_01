@@ -20,6 +20,8 @@
     </environments>
 
     <mappers>
-        <mapper class="com.team.orderapp.mapper.ProductMapper"/>
+        <mapper class="com.team.orderapp.product.ProductDao"/>
+        <mapper class="com.team.orderapp.product.CategoryDao"/>
+        <mapper class="com.team.orderapp.product.ProductUnitDao"/>
     </mappers>
 </configuration>
