@@ -25,7 +25,6 @@ replay_pid*
 
 # from this line, added by KIM_SANG_JIN
 *.iml
-*.xml
 .omc/
 
 .gradle/
