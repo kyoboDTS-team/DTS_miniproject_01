@@ -1,8 +1,13 @@
 package com.team.orderapp.product;
 
+import lombok.Getter;
+import lombok.Setter;
+
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-
+@Getter
+@Setter
 public class Product {
 
     private Long productId;
@@ -20,99 +25,4 @@ public class Product {
     public Product() {
     }
 
-    public Long getProductId() {
-        return productId;
-    }
-
-    public void setProductId(Long productId) {
-        this.productId = productId;
-    }
-
-    public String getProductCode() {
-        return productCode;
-    }
-
-    public void setProductCode(String productCode) {
-        this.productCode = productCode;
-    }
-
-    public Long getCategoryId() {
-        return categoryId;
-    }
-
-    public void setCategoryId(Long categoryId) {
-        this.categoryId = categoryId;
-    }
-
-    public String getProductName() {
-        return productName;
-    }
-
-    public void setProductName(String productName) {
-        this.productName = productName;
-    }
-
-    public BigDecimal getPrice() {
-        return price;
-    }
-
-    public void setPrice(BigDecimal price) {
-        this.price = price;
-    }
-
-    public Integer getStockQuantity() {
-        return stockQuantity;
-    }
-
-    public void setStockQuantity(Integer stockQuantity) {
-        this.stockQuantity = stockQuantity;
-    }
-
-    public Integer getReorderLevel() {
-        return reorderLevel;
-    }
-
-    public void setReorderLevel(Integer reorderLevel) {
-        this.reorderLevel = reorderLevel;
-    }
-
-    public String getSaleStatus() {
-        return saleStatus;
-    }
-
-    public void setSaleStatus(String saleStatus) {
-        this.saleStatus = saleStatus;
-    }
-
-    public Boolean getRequiresSerial() {
-        return requiresSerial;
-    }
-
-    public void setRequiresSerial(Boolean requiresSerial) {
-        this.requiresSerial = requiresSerial;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    @Override
-    public String toString() {
-        return "Product{" +
-                "productId=" + productId +
-                ", productCode='" + productCode + '\'' +
-                ", categoryId=" + categoryId +
-                ", productName='" + productName + '\'' +
-                ", price=" + price +
-                ", stockQuantity=" + stockQuantity +
-                ", reorderLevel=" + reorderLevel +
-                ", saleStatus='" + saleStatus + '\'' +
-                ", requiresSerial=" + requiresSerial +
-                ", createdAt=" + createdAt +
-                '}';
-    }
 }
