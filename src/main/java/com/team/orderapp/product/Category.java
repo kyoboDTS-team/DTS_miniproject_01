@@ -1,5 +1,54 @@
 package com.team.orderapp.product;
 
 public class Category {
-    // TODO: category 테이블과 매핑되는 카테고리 정보(식별자, 상위 카테고리 ID, 카테고리 코드, 카테고리명 등) 도메인 모델 구현
+
+    private Long categoryId;
+    private Long parentCategoryId;
+    private String categoryCode;
+    private String categoryName;
+
+    public Category() {
+    }
+
+    public Long getCategoryId() {
+        return categoryId;
+    }
+
+    public void setCategoryId(Long categoryId) {
+        this.categoryId = categoryId;
+    }
+
+    public Long getParentCategoryId() {
+        return parentCategoryId;
+    }
+
+    public void setParentCategoryId(Long parentCategoryId) {
+        this.parentCategoryId = parentCategoryId;
+    }
+
+    public String getCategoryCode() {
+        return categoryCode;
+    }
+
+    public void setCategoryCode(String categoryCode) {
+        this.categoryCode = categoryCode;
+    }
+
+    public String getCategoryName() {
+        return categoryName;
+    }
+
+    public void setCategoryName(String categoryName) {
+        this.categoryName = categoryName;
+    }
+
+    @Override
+    public String toString() {
+        return "Category{" +
+                "categoryId=" + categoryId +
+                ", parentCategoryId=" + parentCategoryId +
+                ", categoryCode='" + categoryCode + '\'' +
+                ", categoryName='" + categoryName + '\'' +
+                '}';
+    }
 }

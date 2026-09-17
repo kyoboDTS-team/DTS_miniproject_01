@@ -15,4 +15,8 @@ dependencies {
 
     // MyBatis 추가
     implementation 'org.mybatis:mybatis:3.5.15'
+
+    // Lombok (게터·세터 등 자동 생성)
+    compileOnly 'org.projectlombok:lombok:1.18.48'
+    annotationProcessor 'org.projectlombok:lombok:1.18.48'
 }
