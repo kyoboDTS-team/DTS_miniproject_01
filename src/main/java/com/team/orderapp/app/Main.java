@@ -24,23 +24,24 @@ public class Main {
         }
 
         try (SqlSession session = DbConnectionFactory.GetFactory().openSession()) {
+            // productDao Mapper 가져오기
             ProductDao mapper = session.getMapper(ProductDao.class);
 
-//            // 1. 헬퍼 함수로 상품 추가 (INSERT)
-//            ProductService.AddNewProduct(mapper, "스테인리스 텀블러", 15000);
-//            ProductService.AddNewProduct(mapper, "무선 마우스", 25000);
-//
-//            // 2. DB에 변경사항 도장 쾅! (이걸 안 하면 등록 안 됨)
-//            session.commit();
-
-            // 3. 전체 목록 데려와서 출력 (SELECT)
+            // 전체 목록 데려와서 출력 (SELECT)
             List<Product> products = mapper.GetAllProducts();
+
             System.out.println("\n=== 등록된 상품 목록 ===");
             if (products == null || products.isEmpty()) {
                 System.out.println("(등록된 상품이 없습니다.)");
             } else {
                 System.out.println("조회된 상품 개수: " + products.size());
+
+                // 등록된 상품 전체 띄우기
+//                for (Product product : products) {
+//                    System.out.println(product);
+//                    }
             }
+
 
         } catch (Exception e) {
             System.out.println("시스템 오류: " + e.getMessage());
