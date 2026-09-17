@@ -1,0 +1,22 @@
+plugins {
+    id 'java'
+}
+
+group = 'com.terminalmarket'
+version = '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    // PostgreSQL JDBC 드라이버 자동 다운로드
+    implementation 'org.postgresql:postgresql:42.7.3'
+
+    // MyBatis 추가
+    implementation 'org.mybatis:mybatis:3.5.15'
+
+    // Lombok (게터·세터 등 자동 생성)
+    compileOnly 'org.projectlombok:lombok:1.18.48'
+    annotationProcessor 'org.projectlombok:lombok:1.18.48'
+}

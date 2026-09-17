@@ -1,0 +1,181 @@
+package com.team.orderapp.product;
+
+import com.team.orderapp.common.DbConnectionFactory;
+import org.apache.ibatis.session.SqlSession;
+
+import java.math.BigDecimal;
+
+public class ProductService {
+
+    // ============================================================
+    // 상품 등록
+    // 담당: 백종민
+    // ============================================================
+
+    /**
+     * 신규 상품을 등록합니다.
+     */
+    public boolean RegisterProduct(Product product) {
+
+        // 1. 입력값 검증
+        ValidateProductForRegister(product);
+
+        // 2. 신규 상품 기본값 설정
+        ApplyRegisterDefaults(product);
+
+        // 3. DB 등록
+        try (SqlSession session = OpenSession()) {
+
+            try {
+                ProductDao productDao = GetProductDao(session);
+
+                boolean result = productDao.Insert(product);
+
+                if (!result) {
+                    session.rollback();
+                    return false;
+                }
+
+                session.commit();
+                return true;
+
+            } catch (Exception e) {
+
+                session.rollback();
+                throw e;
+            }
+
+        } catch (Exception e) {
+
+            System.out.println(
+                    "상품 등록 중 오류: " + e.getMessage()
+            );
+
+            return false;
+        }
+    }
+
+
+    /**
+     * 상품 등록 시 입력값을 검증합니다.
+     */
+    private void ValidateProductForRegister(Product product) {
+
+        if (product == null) {
+            throw new IllegalArgumentException(
+                    "상품 정보가 없습니다."
+            );
+        }
+
+        if (product.getProductCode() == null ||
+                product.getProductCode().isBlank()) {
+
+            throw new IllegalArgumentException(
+                    "상품 코드를 입력해 주세요."
+            );
+        }
+
+        if (product.getProductName() == null ||
+                product.getProductName().isBlank()) {
+
+            throw new IllegalArgumentException(
+                    "상품명을 입력해 주세요."
+            );
+        }
+
+        if (product.getCategoryId() == null) {
+
+            throw new IllegalArgumentException(
+                    "카테고리를 선택해 주세요."
+            );
+        }
+
+        if (product.getPrice() == null ||
+                product.getPrice()
+                        .compareTo(BigDecimal.ZERO) < 0) {
+
+            throw new IllegalArgumentException(
+                    "가격은 0원 이상이어야 합니다."
+            );
+        }
+
+        if (product.getReorderLevel() == null ||
+                product.getReorderLevel() < 0) {
+
+            throw new IllegalArgumentException(
+                    "안전재고는 0 이상이어야 합니다."
+            );
+        }
+    }
+
+
+    /**
+     * 신규 상품 등록 시 기본값을 설정합니다.
+     */
+    private void ApplyRegisterDefaults(Product product) {
+
+        // 신규 상품은 입고 전이므로 재고 0
+        product.setStockQuantity(0);
+
+        // 신규 상품은 기본적으로 판매중
+        product.setSaleStatus("SELLING");
+
+        // 시리얼 관리 여부를 선택하지 않으면 일반 상품 처리
+        if (product.getRequiresSerial() == null) {
+            product.setRequiresSerial(false);
+        }
+    }
+
+
+    // ============================================================
+    // 상품 조회
+    // 담당: 박형준
+    //
+    // 예:
+    // FindAllProducts()
+    // FindProductById()
+    // FindProductsByCondition()
+    // ============================================================
+
+
+    // ============================================================
+    // 상품 수정
+    // 담당: 백종민
+    // ============================================================
+
+
+    // ============================================================
+    // 상품 삭제 / 판매 상태 변경
+    // 담당: 백종민
+    // ============================================================
+
+
+    // ============================================================
+    // 공통 Helper
+    // ============================================================
+
+    /**
+     * MyBatis SqlSession을 생성합니다.
+     */
+    private SqlSession OpenSession() {
+
+        if (DbConnectionFactory.GetFactory() == null) {
+            throw new IllegalStateException(
+                    "DB 연결 설정이 초기화되지 않았습니다."
+            );
+        }
+
+        return DbConnectionFactory
+                .GetFactory()
+                .openSession();
+    }
+
+
+    /**
+     * ProductDao Mapper를 가져옵니다.
+     */
+    private ProductDao GetProductDao(SqlSession session) {
+
+        return session.getMapper(ProductDao.class);
+    }
+}
