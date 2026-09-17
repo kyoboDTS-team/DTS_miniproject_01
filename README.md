@@ -5,9 +5,14 @@
 </p>
 
 <p align="center">
+  <img src="assets/images/terminal-market-cover.png" width="800">
+</p>
+
+<p align="center">
   Java, MyBatis, PostgreSQL을 활용하여<br>
   상품 조회부터 주문, 재고, 시리얼, 반품까지 구현하는 팀 프로젝트입니다.
 </p>
+
 
 ---
 
@@ -314,6 +319,39 @@ com.team.orderapp.app.Main
 | **이태은** | 회원정보, 회원가입 입력 및 검증 |
 | **김상진** | 로그인 / 인증 / 세션, 주문 생성, 반품, 트랜잭션 |
 | **박형준** | 메인 메뉴, 상품 조회, 장바구니, 주문 조회, 통계 |
+
+---
+
+# 👥 Team
+
+<table>
+  <tr>
+    <td rowspan="5" align="center" valign="middle">
+      <img src="assets/images/terminal-market-profile.png" height="170" alt="TMT Team Logo">
+    </td>
+    <th align="center">이름</th>
+    <th align="center">담당</th>
+  </tr>
+  <tr>
+    <td align="center"><b>백종민</b></td>
+    <td>상품 / 카테고리, 재고, 시리얼, 상품 CSV, DB 구조</td>
+  </tr>
+
+  <tr>
+    <td align="center"><b>이태은</b></td>
+    <td>회원정보, 회원가입 입력 및 검증</td>
+  </tr>
+
+  <tr>
+    <td align="center"><b>김상진</b></td>
+    <td>로그인 / 인증 / 세션, 주문 생성, 반품, 트랜잭션</td>
+  </tr>
+
+  <tr>
+    <td align="center"><b>박형준</b></td>
+    <td>메인 메뉴, 상품 조회, 장바구니, 주문 조회, 통계</td>
+  </tr>
+</table>
 
 ---
 
