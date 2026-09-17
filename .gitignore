@@ -41,4 +41,4 @@ config/db.properties
 .DS_Store
 .claude/
 CLAUDE.md
-AGENT.md
+AGENTS.md
