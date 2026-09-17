@@ -39,3 +39,5 @@ config/db.properties
 # 개인 도구
 .omc/
 .DS_Store
+.claude/
+CLAUDE.md
