@@ -1,5 +1,7 @@
 package com.team.orderapp.app;
 
+import com.team.orderapp.customer.MyInfoMenu;
+
 import java.util.Scanner;
 
 /**
@@ -63,8 +65,7 @@ public class MemberMenu {
                     break;
 
                 case "6":
-                    // TODO: 회원 정보 조회 / 수정 연결
-                    System.out.println("[TODO] 내 정보 조회 / 수정");
+                    new MyInfoMenu(scanner, email).Run();
                     break;
 
                 case "7":

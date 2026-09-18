@@ -35,6 +35,17 @@ public interface CustomerDao {
     Optional<Customer> FindById(@Param("customerId") Long customerId);
 
     /**
+     * 이메일로 고객을 정확히 한 명 조회합니다. 로그인한 회원 본인 정보를 찾을 때 사용합니다.
+     *
+     * @param email 조회할 이메일
+     * @return 조회된 Customer Optional 객체
+     */
+    @Select("SELECT c.customer_id, c.user_id, c.customer_name, c.phone, c.created_at, u.email " +
+            "FROM customer c JOIN app_user u ON c.user_id = u.user_id " +
+            "WHERE u.email = #{email}")
+    Optional<Customer> FindByEmail(@Param("email") String email);
+
+    /**
      * 유저 식별자(userId)를 기준으로 고객 정보를 조회합니다.
      *
      * @param userId 사용자 ID
