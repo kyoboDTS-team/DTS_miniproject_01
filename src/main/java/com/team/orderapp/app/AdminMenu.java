@@ -4,6 +4,7 @@ import com.team.orderapp.product.ProductCommandMenu;
 import com.team.orderapp.stock.StockMenu;
 import com.team.orderapp.order.query.OrderQueryMenu;
 import com.team.orderapp.order.query.OrderAdminMenu;
+import com.team.orderapp.report.ReportMenu;
 
 import java.util.Scanner;
 
@@ -74,8 +75,9 @@ public class AdminMenu {
                     break;
 
                 case "5":
-                    // TODO: 관리자 통계 메뉴 연결
-                    System.out.println("[TODO] 통계");
+                    ReportMenu reportMenu = new ReportMenu(scanner);
+
+                    reportMenu.Run();
                     break;
 
                 case "6":
