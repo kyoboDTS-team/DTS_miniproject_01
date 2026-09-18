@@ -1,5 +1,6 @@
 package com.team.orderapp.product;
 
+import com.team.orderapp.stock.SerialStockConsistency;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
@@ -65,4 +66,35 @@ public interface ProductUnitDao {
     List<ProductUnit> FindByProductId(
             @Param("productId") Long productId
     );
+
+    // ============================================================
+    // 전체 시리얼 상품 재고 정합성 조회
+    // ============================================================
+    @Select("""
+    SELECT
+        p.product_id,
+        p.product_code,
+        p.product_name,
+        p.stock_quantity,
+        COALESCE(
+            SUM(
+                CASE
+                    WHEN pu.unit_status = 'AVAILABLE' THEN 1
+                    ELSE 0
+                END
+            ),
+            0
+        ) AS available_unit_count
+    FROM product p
+    LEFT JOIN product_unit pu
+        ON p.product_id = pu.product_id
+    WHERE p.requires_serial = TRUE
+    GROUP BY
+        p.product_id,
+        p.product_code,
+        p.product_name,
+        p.stock_quantity
+    ORDER BY p.product_id
+    """)
+    List<SerialStockConsistency> FindSerialStockConsistency();
 }

@@ -505,4 +505,14 @@ public class StockService {
             return dao.FindHistoryByPeriod(startDate, endDate);
         }
     }
+
+    // ============================================================
+    // 시리얼 상품 재고 정합성 검사
+    // ============================================================
+    public List<SerialStockConsistency> CheckSerialStockConsistency() {
+        try (SqlSession session = OpenSession()) {
+            ProductUnitDao productUnitDao = session.getMapper(ProductUnitDao.class);
+            return productUnitDao.FindSerialStockConsistency();
+        }
+    }
 }

@@ -9,6 +9,8 @@ import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Scanner;
 
+import com.team.orderapp.stock.SerialStockConsistency;
+
 
 
 /**
@@ -75,6 +77,10 @@ public class StockMenu {
                     RunAdjustmentHistoryMenu();
                     break;
 
+                case "6":
+                    ShowSerialStockConsistency();
+                    break;
+
                 case "0":
                     return;
 
@@ -107,27 +113,13 @@ public class StockMenu {
                 "========================================"
         );
 
-        System.out.println(
-                "1. 일반 상품 재고 입고 / 조정"
-        );
-
-        System.out.println(
-                "2. 시리얼 상품 입고 / 시리얼 등록"
-        );
-
-        System.out.println(
-                "3. 시리얼 목록 조회"
-        );
-        System.out.println(
-                "4. 재고 현황 / 부족 관리"
-        );
-        System.out.println(
-                "5. 재고 변경 이력"
-        );
-        System.out.println(
-                "0. 이전"
-        );
-
+        System.out.println("1. 재고 조정");
+        System.out.println("2. 시리얼 등록");
+        System.out.println("3. 시리얼 조회");
+        System.out.println("4. 재고 현황 / 부족 관리");
+        System.out.println("5. 재고 변경 이력");
+        System.out.println("6. 시리얼 재고 정합성 검사");
+        System.out.println("0. 이전");
         System.out.println(
                 "----------------------------------------"
         );
@@ -1004,7 +996,79 @@ public class StockMenu {
         }
     }
 
+    // ============================================================
+    // 시리얼 상품 재고 정합성 검사 결과 출력
+    // ============================================================
+    private void ShowSerialStockConsistency() {
+        try {
+            List<SerialStockConsistency> results =
+                    stockService.CheckSerialStockConsistency();
 
+            System.out.println();
+            System.out.println("================================================================================");
+            System.out.println("                         시리얼 상품 재고 정합성 검사");
+            System.out.println("================================================================================");
+
+            if (results == null || results.isEmpty()) {
+                System.out.println("시리얼 관리 상품이 없습니다.");
+                return;
+            }
+
+            System.out.printf(
+                    "%-6s %-14s %-20s %-10s %-12s %-8s %-8s%n",
+                    "ID", "상품코드", "상품명", "DB재고", "AVAILABLE", "차이", "결과"
+            );
+
+            System.out.println(
+                    "--------------------------------------------------------------------------------"
+            );
+
+            int normalCount = 0;
+            int errorCount = 0;
+
+            for (SerialStockConsistency result : results) {
+                boolean consistent = result.IsConsistent();
+
+                if (consistent) {
+                    normalCount++;
+                } else {
+                    errorCount++;
+                }
+
+                String status = consistent ? "정상" : "불일치";
+
+                System.out.printf(
+                        "%-6d %-14s %-20s %-10d %-12d %-8d %-8s%n",
+                        result.getProductId(),
+                        result.getProductCode(),
+                        result.getProductName(),
+                        result.getStockQuantity(),
+                        result.getAvailableUnitCount(),
+                        result.GetDifference(),
+                        status
+                );
+            }
+
+            System.out.println(
+                    "--------------------------------------------------------------------------------"
+            );
+
+            System.out.println(
+                    "검사 결과: 전체 " + results.size()
+                            + "개 / 정상 " + normalCount
+                            + "개 / 불일치 " + errorCount + "개"
+            );
+
+            if (errorCount > 0) {
+                System.out.println(
+                        "※ 불일치 상품은 DB 재고와 AVAILABLE 시리얼 수를 확인해 주세요."
+                );
+            }
+
+        } catch (Exception e) {
+            System.out.println("재고 정합성 검사 실패: " + e.getMessage());
+        }
+    }
 
 
     // ============================================================
