@@ -199,6 +199,24 @@ public interface ProductDao {
 
 
     // =========================================================
+    // 상품 판매 상태 변경
+    // 백종민
+    //
+    // SELLING  : 판매중
+    // STOPPED  : 판매중지
+    // =========================================================
+    @Update("""
+    UPDATE product
+    SET sale_status = #{saleStatus}
+    WHERE product_id = #{productId}
+    """)
+    boolean UpdateSaleStatus(
+            @Param("productId") Long productId,
+            @Param("saleStatus") String saleStatus
+    );
+
+
+    // =========================================================
     // 상품 재고 증감
     //
     // 나중에 재고 관리 기능에서 사용

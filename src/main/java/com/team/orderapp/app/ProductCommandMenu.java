@@ -46,7 +46,7 @@ public class ProductCommandMenu {
 
 
     // ============================================================
-    // 상품 등록
+    // 1번 메뉴 : 상품 등록
     // 담당: 백종민
     // ============================================================
 
@@ -117,7 +117,7 @@ public class ProductCommandMenu {
 
 
     // ============================================================
-    // 상품 수정
+    // 2번 메뉴 : 상품 수정
     // 담당: 백종민
     // ============================================================
 
@@ -216,6 +216,122 @@ public class ProductCommandMenu {
         }
     }
 
+    // ============================================================
+    // 판매 상태 변경
+    // 담당: 백종민
+    // ============================================================
+
+    private void ChangeSaleStatus() {
+
+        System.out.println();
+        System.out.println(
+                "========================================"
+        );
+        System.out.println(
+                "            판매 상태 변경"
+        );
+        System.out.println(
+                "========================================"
+        );
+
+
+        try {
+
+            // 상태를 변경할 상품 선택
+            Long productId =
+                    ReadLong(
+                            "상품 ID > "
+                    );
+
+
+            System.out.println();
+            System.out.println(
+                    "1. 판매중 (SELLING)"
+            );
+
+            System.out.println(
+                    "2. 판매중지 (STOPPED)"
+            );
+
+            System.out.print(
+                    "변경할 상태 > "
+            );
+
+
+            String input =
+                    scanner.nextLine().trim();
+
+
+            String saleStatus;
+
+
+            // 사용자가 선택한 번호를
+            // DB에서 사용하는 상태 문자열로 변환
+            switch (input) {
+
+                case "1":
+
+                    saleStatus = "SELLING";
+                    break;
+
+
+                case "2":
+
+                    saleStatus = "STOPPED";
+                    break;
+
+
+                default:
+
+                    System.out.println(
+                            "올바른 상태를 선택해 주세요."
+                    );
+
+                    return;
+            }
+
+
+            // Service에 판매 상태 변경 요청
+            boolean result =
+                    productService.ChangeSaleStatus(
+                            productId,
+                            saleStatus
+                    );
+
+
+            if (result) {
+
+                System.out.println();
+
+                System.out.println(
+                        "판매 상태가 "
+                                + saleStatus
+                                + " 상태로 변경되었습니다."
+                );
+
+
+            } else {
+
+                System.out.println();
+
+                System.out.println(
+                        "판매 상태 변경에 실패했습니다."
+                );
+
+                System.out.println(
+                        "존재하지 않는 상품 ID인지 확인해 주세요."
+                );
+            }
+
+
+        } catch (Exception e) {
+
+            System.out.println(
+                    "판매 상태 변경 오류: "
+                            + e.getMessage()
+            );
+        }
+    }
 
     // ============================================================
     // 화면 출력
@@ -228,6 +344,8 @@ public class ProductCommandMenu {
         System.out.println("          상품 / 카테고리 관리");
         System.out.println("========================================");
         System.out.println("1. 상품 등록");
+        System.out.println("2. 상품 수정");
+        System.out.println("3. 판매 상태 변경");
 
         // 이후 추가 예정
         // 2. 상품 수정

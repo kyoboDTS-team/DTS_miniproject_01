@@ -264,6 +264,89 @@ public class ProductService {
     // 담당: 백종민
     // ============================================================
 
+    /**
+     * 상품의 판매 상태를 변경.
+     *
+     * SELLING : 판매중
+     * STOPPED : 판매중지
+     */
+    public boolean ChangeSaleStatus(
+            Long productId,
+            String saleStatus
+    ) {
+
+        // 상품 ID 검증
+        if (productId == null || productId <= 0) {
+
+            throw new IllegalArgumentException(
+                    "올바른 상품 ID를 입력해 주세요."
+            );
+        }
+
+
+        // 판매 상태 검증
+        if (saleStatus == null ||
+                (!saleStatus.equals("SELLING") &&
+                        !saleStatus.equals("STOPPED"))) {
+
+            throw new IllegalArgumentException(
+                    "올바른 판매 상태가 아닙니다."
+            );
+        }
+
+
+        try (SqlSession session = OpenSession()) {
+
+            try {
+
+                ProductDao productDao =
+                        GetProductDao(session);
+
+
+                // 판매 상태 UPDATE
+                boolean result =
+                        productDao.UpdateSaleStatus(
+                                productId,
+                                saleStatus
+                        );
+
+
+                // product_id가 없어서
+                // 변경된 행이 없는 경우
+                if (!result) {
+
+                    session.rollback();
+
+                    return false;
+                }
+
+
+                // 정상 처리
+                session.commit();
+
+                return true;
+
+
+            } catch (Exception e) {
+
+                // SQL 실행 중 문제가 발생하면 원상복구
+                session.rollback();
+
+                throw e;
+            }
+
+
+        } catch (Exception e) {
+
+            System.out.println(
+                    "판매 상태 변경 중 오류: "
+                            + e.getMessage()
+            );
+
+            return false;
+        }
+    }
+
 
     // ============================================================
     // 공통 Helper
