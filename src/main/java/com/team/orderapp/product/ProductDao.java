@@ -142,6 +142,74 @@ public interface ProductDao {
             """)
     List<Product> FindAll();
 
+    // =========================================================
+// 상품 ID로 조회
+// =========================================================
+    @Select("""
+    SELECT
+        product_id,
+        product_code,
+        category_id,
+        product_name,
+        price,
+        stock_quantity,
+        reorder_level,
+        sale_status,
+        requires_serial,
+        created_at
+    FROM product
+    WHERE category_Id = #{categoryId}
+    """)
+    List<Product> FindByCategory(
+            @Param("categoryId") Long categoryId
+    );
+
+    //가격 범위 조회
+    @Select("""
+SELECT
+    product_id,
+    product_code,
+    category_id,
+    product_name,
+    price,
+    stock_quantity,
+    reorder_level,
+    sale_status,
+    requires_serial,
+    created_at
+FROM product
+WHERE price BETWEEN #{minPrice} AND #{maxPrice}
+ORDER BY price
+""")
+    List<Product> FindByPriceRange(
+            @Param("minPrice") BigDecimal minPrice,
+            @Param("maxPrice") BigDecimal maxPrice
+    );
+
+    //선택한 카테고리 가격 범위 조회
+    @Select("""
+SELECT
+    product_id,
+    product_code,
+    category_id,
+    product_name,
+    price,
+    stock_quantity,
+    reorder_level,
+    sale_status,
+    requires_serial,
+    created_at
+FROM product
+WHERE category_id = #{categoryId}
+  AND price BETWEEN #{minPrice} AND #{maxPrice}
+ORDER BY price
+""")
+    List<Product> FindByCategoryAndPriceRange(
+            @Param("categoryId") Long categoryId,
+            @Param("minPrice") BigDecimal minPrice,
+            @Param("maxPrice") BigDecimal maxPrice
+    );
+
 
     // =========================================================
     // 실제 상품 등록
