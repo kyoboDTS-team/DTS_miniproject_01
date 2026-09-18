@@ -107,4 +107,36 @@ public interface ReportDao {
             "totalSales" DESC
         """)
     List<ProductSalesStat> GetProductSalesStats();
+
+    // ============================================================
+    // 관리자 상품 / 재고 현황 요약 조회
+    // ============================================================
+    @Select("""
+    SELECT
+        COUNT(*) AS total_product_count,
+
+        COUNT(*) FILTER (
+            WHERE sale_status = 'SELLING'
+        ) AS selling_product_count,
+
+        COUNT(*) FILTER (
+            WHERE sale_status = 'STOPPED'
+        ) AS stopped_product_count,
+
+        COUNT(*) FILTER (
+            WHERE stock_quantity > 0
+              AND stock_quantity <= reorder_level
+        ) AS low_stock_product_count,
+
+        COUNT(*) FILTER (
+            WHERE stock_quantity = 0
+        ) AS out_of_stock_product_count,
+
+        COUNT(*) FILTER (
+            WHERE requires_serial = TRUE
+        ) AS serial_product_count
+
+    FROM product
+    """)
+    AdminDashboardStat GetAdminDashboardStat();
 }
