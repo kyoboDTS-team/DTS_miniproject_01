@@ -1,7 +1,5 @@
-package com.team.orderapp.app;
+package com.team.orderapp.product;
 
-import com.team.orderapp.product.Product;
-import com.team.orderapp.product.ProductService;
 
 import java.math.BigDecimal;
 import java.util.Scanner;
@@ -11,8 +9,9 @@ public class ProductCommandMenu {
     private final Scanner scanner;
     private final ProductService productService;
 
-    public ProductCommandMenu() {
-        this.scanner = new Scanner(System.in);
+    public ProductCommandMenu(Scanner scanner) {
+
+        this.scanner = scanner;
         this.productService = new ProductService();
     }
 
@@ -33,6 +32,31 @@ public class ProductCommandMenu {
 
                 case "1":
                     RegisterProduct();
+                    break;
+
+                case "2":
+                    // 상품 수정
+                    UpdateProduct();
+                    break;
+
+                case "3":
+                    // 판매 상태 변경
+                    ChangeSaleStatus();
+                    break;
+
+                case "4":
+                    // 상품 삭제
+                    DeleteProduct();
+                    break;
+
+                case "5":
+
+                    // 카테고리 관리 메뉴 진입
+                    CategoryMenu categoryMenu =
+                            new CategoryMenu(scanner);
+
+                    categoryMenu.Run();
+
                     break;
 
                 case "0":
