@@ -11,6 +11,9 @@ import org.apache.ibatis.session.SqlSession;
 import java.util.List;
 import java.util.Optional;
 
+import static com.team.orderapp.common.DbConnectionFactory.OpenSession;
+
+
 /**
  * 재고 / 시리얼 관리 Service
  *
@@ -62,7 +65,7 @@ public class StockService {
 
 
         try (SqlSession session =
-                     DbConnectionFactory.OpenSession()) {
+                     OpenSession()) {
 
             if (session == null) {
                 throw new IllegalStateException(
@@ -199,7 +202,7 @@ public class StockService {
 
 
         try (SqlSession session =
-                     DbConnectionFactory.OpenSession()) {
+                     OpenSession()) {
 
             if (session == null) {
 
@@ -341,7 +344,7 @@ public class StockService {
 
 
         try (SqlSession session =
-                     DbConnectionFactory.OpenSession()) {
+                     OpenSession()) {
 
             if (session == null) {
 
@@ -359,6 +362,102 @@ public class StockService {
 
             return productUnitDao
                     .FindByProductId(productId);
+        }
+    }
+    // ============================================================
+    // 전체 재고 현황 조회
+    // ============================================================
+
+    public List<Product> FindAllStockProducts() {
+
+        try (SqlSession session = OpenSession()) {
+
+            ProductDao productDao =
+                    session.getMapper(ProductDao.class);
+
+            return productDao.FindAll();
+        }
+    }
+
+
+    // ============================================================
+    // 재고 부족 상품 조회
+    //
+    // 재고 > 0
+    // 재고 <= 안전재고
+    // ============================================================
+
+    public List<Product> FindLowStockProducts() {
+
+        try (SqlSession session = OpenSession()) {
+
+            ProductDao productDao =
+                    session.getMapper(ProductDao.class);
+
+            return productDao.FindLowStockProducts();
+        }
+    }
+
+
+    // ============================================================
+    // 품절 상품 조회
+    //
+    // 재고 = 0
+    // ============================================================
+
+    public List<Product> FindOutOfStockProducts() {
+
+        try (SqlSession session = OpenSession()) {
+
+            ProductDao productDao =
+                    session.getMapper(ProductDao.class);
+
+            return productDao.FindOutOfStockProducts();
+        }
+    }
+
+    // ============================================================
+    // 상품 재고 상태 판단
+    // ============================================================
+
+    public String GetStockStatus(Product product) {
+
+        int stockQuantity =
+                product.getStockQuantity();
+
+        int reorderLevel =
+                product.getReorderLevel();
+
+
+        // 재고가 0이면 가장 먼저 품절 처리
+        if (stockQuantity == 0) {
+            return "품절";
+        }
+
+
+        // 재고가 존재하지만 안전재고 이하이면 부족
+        if (stockQuantity <= reorderLevel) {
+            return "부족";
+        }
+
+
+        return "정상";
+    }
+
+    // ============================================================
+    // 상품 ID로 상품 조회
+    // ============================================================
+
+    public Product FindProductById(Long productId) {
+
+        try (SqlSession session = OpenSession()) {
+
+            ProductDao productDao =
+                    session.getMapper(ProductDao.class);
+
+            return productDao
+                    .FindById(productId)
+                    .orElse(null);
         }
     }
 }

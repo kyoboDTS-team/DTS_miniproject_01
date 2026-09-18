@@ -1,6 +1,7 @@
 package com.team.orderapp.stock;
 
 import com.team.orderapp.product.ProductUnit;
+import com.team.orderapp.product.Product;
 
 import java.util.List;
 import java.util.Scanner;
@@ -61,6 +62,9 @@ public class StockMenu {
                     FindSerials();
                     break;
 
+                case "4":
+                    RunStockStatusMenu();
+                    break;
 
                 case "0":
                     return;
@@ -134,7 +138,6 @@ public class StockMenu {
 
 
             if (result) {
-
                 System.out.println();
                 System.out.println(
                         "재고가 정상적으로 변경되었습니다."
@@ -287,6 +290,230 @@ public class StockMenu {
         }
     }
 
+    // ============================================================
+    // 재고 현황 / 부족 관리 메뉴
+    // ============================================================
+
+    private void RunStockStatusMenu() {
+
+        while (true) {
+
+            System.out.println();
+            System.out.println(
+                    "========================================"
+            );
+
+            System.out.println(
+                    "          재고 현황 / 부족 관리"
+            );
+
+            System.out.println(
+                    "========================================"
+            );
+
+            System.out.println("1. 전체 재고 현황");
+            System.out.println("2. 재고 부족 상품");
+            System.out.println("3. 품절 상품");
+            System.out.println("0. 이전");
+
+            System.out.println(
+                    "----------------------------------------"
+            );
+
+            System.out.print("선택 > ");
+
+
+            String input =
+                    scanner.nextLine().trim();
+
+            switch (input) {
+                case "1":
+                    ShowAllStockProducts();
+                    break;
+
+                case "2":
+                    ShowLowStockProducts();
+                    break;
+
+                case "3":
+                    ShowOutOfStockProducts();
+                    break;
+
+                case "0":
+                    return;
+
+                default:
+                    System.out.println(
+                            "올바른 메뉴 번호를 입력해 주세요."
+                    );
+            }
+        }
+    }
+
+    // ============================================================
+    // 전체 재고 현황
+    // ============================================================
+
+    private void ShowAllStockProducts() {
+
+        try {
+
+            List<Product> products =
+                    stockService.FindAllStockProducts();
+
+
+            System.out.println();
+            System.out.println(
+                    "=========================================================================="
+            );
+
+            System.out.println(
+                    "                           전체 재고 현황"
+            );
+
+            System.out.println(
+                    "=========================================================================="
+            );
+
+
+            PrintStockProducts(products);
+
+            
+
+        } catch (Exception e) {
+
+            System.out.println(
+                    "재고 현황 조회 실패: "
+                            + e.getMessage()
+            );
+        }
+    }
+
+    // ============================================================
+    // 재고 부족 상품
+    // ============================================================
+
+    private void ShowLowStockProducts() {
+
+        try {
+
+            List<Product> products =
+                    stockService.FindLowStockProducts();
+
+
+            System.out.println();
+            System.out.println(
+                    "=========================================================================="
+            );
+
+            System.out.println(
+                    "                          재고 부족 상품"
+            );
+
+            System.out.println(
+                    "=========================================================================="
+            );
+
+            PrintStockProducts(products);
+
+        } catch (Exception e) {
+            System.out.println(
+                    "재고 부족 상품 조회 실패: "
+                            + e.getMessage()
+            );
+        }
+    }
+
+    // ============================================================
+    // 품절 상품
+    // ============================================================
+
+    private void ShowOutOfStockProducts() {
+
+        try {
+
+            List<Product> products =
+                    stockService.FindOutOfStockProducts();
+
+            System.out.println();
+            System.out.println(
+                    "=========================================================================="
+            );
+            System.out.println(
+                    "                              품절 상품"
+            );
+            System.out.println(
+                    "=========================================================================="
+            );
+            PrintStockProducts(products);
+        } catch (Exception e) {
+            System.out.println(
+                    "품절 상품 조회 실패: "
+                            + e.getMessage()
+            );
+        }
+    }
+
+    // ============================================================
+    // 재고 상품 목록 공통 출력
+    // ============================================================
+
+    private void PrintStockProducts(
+            List<Product> products
+    ) {
+
+        if (products == null ||
+                products.isEmpty()) {
+
+            System.out.println(
+                    "조회된 상품이 없습니다."
+            );
+
+            return;
+        }
+
+        System.out.printf(
+                "%-6s %-14s %-20s %-10s %-10s %-8s %-8s%n",
+                "ID",
+                "상품코드",
+                "상품명",
+                "현재재고",
+                "안전재고",
+                "상태",
+                "시리얼"
+        );
+
+        System.out.println(
+                "--------------------------------------------------------------------------"
+        );
+
+
+        for (Product product : products) {
+
+            String stockStatus =
+                    stockService
+                            .GetStockStatus(product);
+
+            String serialStatus =
+                    Boolean.TRUE.equals(
+                            product.getRequiresSerial()
+                    )
+                            ? "Y"
+                            : "N";
+
+            System.out.printf(
+                    "%-6d %-14s %-20s %-10d %-10d %-8s %-8s%n",
+
+                    product.getProductId(),
+                    product.getProductCode(),
+                    product.getProductName(),
+                    product.getStockQuantity(),
+                    product.getReorderLevel(),
+                    stockStatus,
+                    serialStatus
+            );
+        }
+    }
 
     // ============================================================
     // 메뉴 출력
@@ -319,7 +546,9 @@ public class StockMenu {
         System.out.println(
                 "3. 시리얼 목록 조회"
         );
-
+        System.out.println(
+                "4. 재고 현황 / 부족 관리"
+        );
         System.out.println(
                 "0. 이전"
         );
@@ -416,4 +645,6 @@ public class StockMenu {
             );
         }
     }
+
+
 }
