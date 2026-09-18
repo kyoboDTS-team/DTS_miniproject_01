@@ -347,6 +347,84 @@ public class ProductService {
         }
     }
 
+    /**
+     * 상품을 삭제합니다.
+     *
+     * 삭제 조건:
+     * - 실제 존재하는 상품
+     * - 주문 이력 없음
+     * - 재고 조정 이력 없음
+     * - 시리얼(product_unit) 이력 없음
+     *
+     * 이력이 있는 상품은 삭제하지 않고
+     * STOPPED 상태 사용을 안내합니다.
+     */
+    public boolean DeleteProduct(Long productId) {
+
+        // 상품 ID 기본 검증
+        if (productId == null || productId <= 0) {
+            throw new IllegalArgumentException(
+                    "올바른 상품 ID를 입력해 주세요."
+            );
+        }
+
+
+        try (SqlSession session = OpenSession()) {
+
+            ProductDao productDao =
+                    GetProductDao(session);
+
+            try {
+
+                // 1. 실제 존재하는 상품인지 확인
+                Optional<Product> product =
+                        productDao.FindById(productId);
+
+                if (product.isEmpty()) {
+                    throw new IllegalArgumentException(
+                            "존재하지 않는 상품입니다."
+                    );
+                }
+
+
+                // 2. 주문 / 재고 / 시리얼 이력 확인
+                boolean hasHistory =
+                        productDao.HasDeleteHistory(productId);
+
+                if (hasHistory) {
+                    throw new IllegalStateException(
+                            "이력이 있는 상품은 삭제할 수 없습니다. "
+                                    + "판매 상태를 STOPPED로 변경해 주세요."
+                    );
+                }
+
+
+                // 3. 실제 DELETE
+                boolean result =
+                        productDao.DeleteById(productId);
+
+                if (!result) {
+                    session.rollback();
+                    return false;
+                }
+
+
+                // 삭제 성공
+                session.commit();
+
+                return true;
+
+
+            } catch (Exception e) {
+
+                // 중간에 실패하면 원상복구
+                session.rollback();
+
+                throw e;
+            }
+        }
+    }
+
 
     // ============================================================
     // 공통 Helper
