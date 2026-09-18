@@ -341,4 +341,51 @@ ORDER BY price
             @Param("productId") Long productId,
             @Param("delta") int delt
     );
+
+    // ============================================================
+    // 재고 부족 상품 조회
+    //
+    // 품절(stock_quantity = 0)은 별도로 조회하기 때문에 제외
+    // 현재 재고가 1개 이상이면서 안전재고 이하인 상품만 조회
+    // ============================================================
+    @Select("""
+    SELECT
+        product_id,
+        product_code,
+        category_id,
+        product_name,
+        price,
+        stock_quantity,
+        reorder_level,
+        sale_status,
+        requires_serial,
+        created_at
+    FROM product
+    WHERE stock_quantity > 0
+      AND stock_quantity <= reorder_level
+    ORDER BY stock_quantity ASC, product_id ASC
+    """)
+    List<Product> FindLowStockProducts();
+
+
+    // ============================================================
+    // 품절 상품 조회
+    // ============================================================
+    @Select("""
+    SELECT
+        product_id,
+        product_code,
+        category_id,
+        product_name,
+        price,
+        stock_quantity,
+        reorder_level,
+        sale_status,
+        requires_serial,
+        created_at
+    FROM product
+    WHERE stock_quantity = 0
+    ORDER BY product_id ASC
+    """)
+    List<Product> FindOutOfStockProducts();
 }
