@@ -12,7 +12,7 @@ public class Main {
     // 관리자로 바꿀수있는 테스트용 나중에 지울거임
     // true  : 관리자 메뉴 바로 실행
     // false : 비회원 메뉴부터 실행
-    private static final boolean ADMIN_TEST_MODE = true;
+    private static final boolean ADMIN_TEST_MODE = false;
     private static final boolean MEMBER_TEST_MODE = false;
 
     public static void main(String[] args) {

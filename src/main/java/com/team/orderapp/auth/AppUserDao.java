@@ -66,6 +66,16 @@ public interface AppUserDao {
     boolean UpdateEmail(@Param("userId") Long userId, @Param("email") String email);
 
     /**
+     * 비밀번호 해시만 수정합니다. 비밀번호 변경 시 사용합니다.
+     *
+     * @param userId       수정할 사용자 ID
+     * @param passwordHash 새 비밀번호 해시(PasswordHasher.Hash() 결과)
+     * @return 수정 성공 여부
+     */
+    @Update("UPDATE app_user SET password_hash = #{passwordHash} WHERE user_id = #{userId}")
+    boolean UpdatePassword(@Param("userId") Long userId, @Param("passwordHash") String passwordHash);
+
+    /**
      * 사용자 식별자로 사용자를 삭제합니다.
      *
      * @param userId 삭제할 사용자 ID
