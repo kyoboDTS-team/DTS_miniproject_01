@@ -22,12 +22,9 @@ public class SignupMenu {
     // common/ConsoleInput이 아직 구현되지 않아 임시로 직접 사용. 완성되면 교체 필요.
     private final Scanner scanner;
 
-    public SignupMenu() {
-        this.scanner = new Scanner(System.in);
-    }
-
     /**
      * GuestMenu 등 상위 화면에서 이미 만들어 쓰고 있는 Scanner를 그대로 물려받아 씁니다.
+     * 앱 전체에서 Scanner(System.in)를 하나만 만들어 공유하는 규칙을 따르기 위함입니다.
      */
     public SignupMenu(Scanner scanner) {
         this.scanner = scanner;
