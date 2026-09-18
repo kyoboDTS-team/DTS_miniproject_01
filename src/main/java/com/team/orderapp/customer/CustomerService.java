@@ -1,6 +1,8 @@
 package com.team.orderapp.customer;
 
+import com.team.orderapp.auth.AppUser;
 import com.team.orderapp.auth.AppUserDao;
+import com.team.orderapp.auth.PasswordHasher;
 import com.team.orderapp.common.DbConnectionFactory;
 import org.apache.ibatis.session.SqlSession;
 
@@ -107,6 +109,19 @@ public class CustomerService {
     }
 
     /**
+     * 이메일로 고객을 정확히 한 명 조회합니다. 로그인한 회원 본인 정보를 찾을 때 사용합니다.
+     *
+     * @param email 조회할 이메일
+     * @return 조회된 Customer Optional 객체
+     */
+    public Optional<Customer> FindByEmail(String email) {
+        try (SqlSession session = OpenSessionOrThrow()) {
+            CustomerDao customerDao = session.getMapper(CustomerDao.class);
+            return customerDao.FindByEmail(email);
+        }
+    }
+
+    /**
      * 이름 또는 이메일(아이디)로 고객을 검색합니다. 정보 수정 대상을 찾을 때 사용합니다.
      *
      * @param keyword 검색어
@@ -156,6 +171,38 @@ public class CustomerService {
         try (SqlSession session = OpenSessionOrThrow()) {
             CustomerDao customerDao = session.getMapper(CustomerDao.class);
             boolean updated = customerDao.Update(customer);
+            session.commit();
+            return updated;
+        }
+    }
+
+    /**
+     * 입력한 비밀번호가 현재 저장된 비밀번호와 일치하는지 확인합니다. 비밀번호 변경 전 본인 확인용입니다.
+     *
+     * @param customer 확인 대상 고객 (userId가 설정되어 있어야 함)
+     * @param password 확인할 평문 비밀번호
+     * @return 일치하면 true
+     */
+    public boolean VerifyPassword(Customer customer, String password) {
+        try (SqlSession session = OpenSessionOrThrow()) {
+            AppUserDao appUserDao = session.getMapper(AppUserDao.class);
+            Optional<AppUser> user = appUserDao.FindById(customer.getUserId());
+            return user.isPresent() && PasswordHasher.Verify(password, user.get().getPasswordHash());
+        }
+    }
+
+    /**
+     * 비밀번호를 변경합니다. 새 비밀번호는 여기서 해싱해서 저장합니다.
+     * 호출 전에 반드시 VerifyPassword()로 현재 비밀번호를 확인해야 합니다.
+     *
+     * @param customer    대상 고객 (userId가 설정되어 있어야 함)
+     * @param newPassword 새 평문 비밀번호
+     * @return 변경 성공 여부
+     */
+    public boolean UpdatePassword(Customer customer, String newPassword) {
+        try (SqlSession session = OpenSessionOrThrow()) {
+            AppUserDao appUserDao = session.getMapper(AppUserDao.class);
+            boolean updated = appUserDao.UpdatePassword(customer.getUserId(), PasswordHasher.Hash(newPassword));
             session.commit();
             return updated;
         }

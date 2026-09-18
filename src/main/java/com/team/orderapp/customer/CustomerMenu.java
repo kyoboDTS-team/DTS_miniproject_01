@@ -31,11 +31,6 @@ public class CustomerMenu {
     // common/ConsoleInput이 아직 구현되지 않아 임시로 직접 사용. 완성되면 교체 필요.
     private final Scanner scanner;
 
-    public CustomerMenu() {
-        this.customerService = new CustomerService();
-        this.scanner = new Scanner(System.in);
-    }
-
     /**
      * AdminMenu 등 상위 화면에서 이미 만들어 쓰고 있는 Scanner를 그대로 물려받아 씁니다.
      * 앱 전체에서 Scanner(System.in)를 하나만 만들어 공유하는 규칙을 따르기 위함입니다.
@@ -529,21 +524,28 @@ public class CustomerMenu {
      * 고객 이름만 수정합니다.
      */
     private void UpdateName(Customer customer) {
-        System.out.print("새 이름 (현재: " + customer.getCustomerName() + ", 0: 취소, p: 회원 관리 메뉴로 이동): ");
-        String newName = scanner.nextLine().trim();
-        CheckMainMenuShortcut(newName);
-        if (IsCancelled(newName)) {
-            return;
+        while (true) {
+            System.out.print("새 이름 (현재: " + customer.getCustomerName() + ", 0: 취소, p: 회원 관리 메뉴로 이동): ");
+            String newName = scanner.nextLine().trim();
+            CheckMainMenuShortcut(newName);
+            if (IsCancelled(newName)) {
+                return;
+            }
+            if (newName.isEmpty()) {
+                System.out.println("이름을 입력해주세요.");
+                continue;
+            }
+            if (newName.length() > NAME_MAX_LENGTH) {
+                System.out.println("이름이 너무 깁니다. (" + NAME_MAX_LENGTH + "자 이하)");
+                continue;
+            }
+            if (newName.equals(customer.getCustomerName())) {
+                System.out.println("동일한 이름은 사용할 수 없습니다. 다시 입력해주세요.");
+                continue;
+            }
+            customer.setCustomerName(newName);
+            break;
         }
-        if (newName.isEmpty()) {
-            System.out.println("입력한 이름이 없어 수정하지 않았습니다.");
-            return;
-        }
-        if (newName.length() > NAME_MAX_LENGTH) {
-            System.out.println("이름이 너무 깁니다. (" + NAME_MAX_LENGTH + "자 이하)");
-            return;
-        }
-        customer.setCustomerName(newName);
 
         try {
             boolean updated = customerService.Update(customer);
@@ -559,31 +561,34 @@ public class CustomerMenu {
      * 고객 전화번호만 수정합니다.
      */
     private void UpdatePhone(Customer customer) {
-        System.out.print("새 전화번호 (현재: " + customer.getPhone() + ", 0: 취소, p: 회원 관리 메뉴로 이동): ");
-        String newPhone = scanner.nextLine().trim();
-        CheckMainMenuShortcut(newPhone);
-        if (IsCancelled(newPhone)) {
-            return;
-        }
-        if (!newPhone.matches(PHONE_PATTERN)) {
-            System.out.println("전화번호 형식이 올바르지 않습니다.");
-            return;
-        }
-
-        String normalizedPhone = newPhone.replace("-", "");
-        try {
-            if (customerService.IsPhoneTaken(normalizedPhone, customer.getCustomerId())) {
-                System.out.println("이미 사용 중인 전화번호입니다.");
+        while (true) {
+            System.out.print("새 전화번호 (현재: " + customer.getPhone() + ", 0: 취소, p: 회원 관리 메뉴로 이동): ");
+            String newPhone = scanner.nextLine().trim();
+            CheckMainMenuShortcut(newPhone);
+            if (IsCancelled(newPhone)) {
                 return;
             }
-        } catch (IllegalStateException e) {
-            System.out.println(DB_ERROR_MESSAGE);
-            return;
-        } catch (Exception e) {
-            System.out.println(COMMUNICATION_ERROR_MESSAGE);
-            return;
+            if (!newPhone.matches(PHONE_PATTERN)) {
+                System.out.println("전화번호 형식이 올바르지 않습니다. 다시 입력해주세요.");
+                continue;
+            }
+
+            String normalizedPhone = newPhone.replace("-", "");
+            try {
+                if (customerService.IsPhoneTaken(normalizedPhone, customer.getCustomerId())) {
+                    System.out.println("이미 사용 중인 전화번호입니다. 다시 입력해주세요.");
+                    continue;
+                }
+            } catch (IllegalStateException e) {
+                System.out.println(DB_ERROR_MESSAGE);
+                return;
+            } catch (Exception e) {
+                System.out.println(COMMUNICATION_ERROR_MESSAGE);
+                return;
+            }
+            customer.setPhone(normalizedPhone);
+            break;
         }
-        customer.setPhone(normalizedPhone);
 
         try {
             boolean updated = customerService.Update(customer);
@@ -600,37 +605,40 @@ public class CustomerMenu {
      * customer가 아니라 auth 쪽 데이터를 수정합니다.
      */
     private void UpdateEmail(Customer customer) {
-        System.out.print("새 이메일/ID (현재: " + customer.getEmail() + ", 0: 취소, p: 회원 관리 메뉴로 이동): ");
-        String newEmail = scanner.nextLine().trim().toLowerCase();
-        CheckMainMenuShortcut(newEmail);
-        if (IsCancelled(newEmail)) {
-            return;
-        }
-        if (!newEmail.matches(EMAIL_PATTERN)) {
-            System.out.println("이메일 형식이 올바르지 않습니다.");
-            return;
-        }
-        if (newEmail.length() > EMAIL_MAX_LENGTH) {
-            System.out.println("이메일이 너무 깁니다. (" + EMAIL_MAX_LENGTH + "자 이하)");
-            return;
-        }
-
-        try {
-            boolean updated = customerService.UpdateEmail(customer, newEmail);
-            if (updated) {
-                customer.setEmail(newEmail);
-                System.out.println("이메일(ID)이 수정되었습니다.");
-            } else {
-                System.out.println("이메일 수정에 실패했습니다.");
+        while (true) {
+            System.out.print("새 이메일/ID (현재: " + customer.getEmail() + ", 0: 취소, p: 회원 관리 메뉴로 이동): ");
+            String newEmail = scanner.nextLine().trim().toLowerCase();
+            CheckMainMenuShortcut(newEmail);
+            if (IsCancelled(newEmail)) {
+                return;
             }
-        } catch (IllegalStateException e) {
-            System.out.println(DB_ERROR_MESSAGE);
-        } catch (Exception e) {
-            if (IsSqlState(e, "23505")) {
-                System.out.println("이미 사용 중인 이메일이라 변경할 수 없습니다.");
-            } else {
+            if (!newEmail.matches(EMAIL_PATTERN)) {
+                System.out.println("이메일 형식이 올바르지 않습니다. 다시 입력해주세요.");
+                continue;
+            }
+            if (newEmail.length() > EMAIL_MAX_LENGTH) {
+                System.out.println("이메일이 너무 깁니다. (" + EMAIL_MAX_LENGTH + "자 이하) 다시 입력해주세요.");
+                continue;
+            }
+
+            try {
+                boolean updated = customerService.UpdateEmail(customer, newEmail);
+                if (updated) {
+                    customer.setEmail(newEmail);
+                    System.out.println("이메일(ID)이 수정되었습니다.");
+                } else {
+                    System.out.println("이메일 수정에 실패했습니다.");
+                }
+            } catch (IllegalStateException e) {
+                System.out.println(DB_ERROR_MESSAGE);
+            } catch (Exception e) {
+                if (IsSqlState(e, "23505")) {
+                    System.out.println("이미 사용 중인 이메일이라 변경할 수 없습니다. 다시 입력해주세요.");
+                    continue;
+                }
                 System.out.println(COMMUNICATION_ERROR_MESSAGE);
             }
+            break;
         }
     }
 
