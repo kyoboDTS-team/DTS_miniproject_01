@@ -112,6 +112,29 @@ public interface CustomerDao {
     List<Customer> SearchByNameOrEmail(@Param("keyword") String keyword);
 
     /**
+     * 전화번호로 이미 등록된 고객이 있는지 셉니다. 회원가입 시 전화번호 중복 체크에 사용합니다.
+     * 전화번호는 phone 컬럼에 유니크 제약이 없어서, 앱에서 직접 확인해야 합니다.
+     * 하이픈(-)을 무시하고 비교합니다.
+     *
+     * @param phone 확인할 전화번호
+     * @return 이미 등록된 건수
+     */
+    @Select("SELECT COUNT(*) FROM customer WHERE REPLACE(phone, '-', '') = REPLACE(#{phone}, '-', '')")
+    long CountByPhone(@Param("phone") String phone);
+
+    /**
+     * 전화번호로 이미 등록된 다른 고객이 있는지 셉니다. 본인 정보 수정 시, 자기 자신의 기존 번호는
+     * 중복으로 잘못 잡지 않도록 excludeCustomerId로 본인을 제외합니다.
+     *
+     * @param phone            확인할 전화번호
+     * @param excludeCustomerId 제외할 고객 ID (본인)
+     * @return 이미 등록된 건수
+     */
+    @Select("SELECT COUNT(*) FROM customer WHERE REPLACE(phone, '-', '') = REPLACE(#{phone}, '-', '') " +
+            "AND customer_id <> #{excludeCustomerId}")
+    long CountByPhoneExcluding(@Param("phone") String phone, @Param("excludeCustomerId") Long excludeCustomerId);
+
+    /**
      * 고객 정보를 갱신합니다.
      *
      * @param customer 갱신할 Customer 객체

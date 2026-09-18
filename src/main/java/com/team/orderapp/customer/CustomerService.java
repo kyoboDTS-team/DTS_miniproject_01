@@ -120,6 +120,33 @@ public class CustomerService {
     }
 
     /**
+     * 전화번호로 이미 등록된 고객이 있는지 확인합니다. 회원가입 시 중복 체크에 사용합니다.
+     *
+     * @param phone 확인할 전화번호
+     * @return 이미 등록되어 있으면 true
+     */
+    public boolean IsPhoneTaken(String phone) {
+        try (SqlSession session = OpenSessionOrThrow()) {
+            CustomerDao customerDao = session.getMapper(CustomerDao.class);
+            return customerDao.CountByPhone(phone) > 0;
+        }
+    }
+
+    /**
+     * 전화번호로 이미 등록된 다른 고객이 있는지 확인합니다(본인은 제외). 정보 수정 시 중복 체크에 사용합니다.
+     *
+     * @param phone             확인할 전화번호
+     * @param excludeCustomerId 제외할 고객 ID (본인)
+     * @return 이미 등록되어 있으면 true
+     */
+    public boolean IsPhoneTaken(String phone, Long excludeCustomerId) {
+        try (SqlSession session = OpenSessionOrThrow()) {
+            CustomerDao customerDao = session.getMapper(CustomerDao.class);
+            return customerDao.CountByPhoneExcluding(phone, excludeCustomerId) > 0;
+        }
+    }
+
+    /**
      * 고객 이름/전화번호를 수정합니다.
      *
      * @param customer customerId가 설정된 Customer 객체
@@ -170,7 +197,11 @@ public class CustomerService {
                 return false;
             }
 
-            appUserDao.DeleteById(customer.getUserId());
+            boolean userDeleted = appUserDao.DeleteById(customer.getUserId());
+            if (!userDeleted) {
+                return false;
+            }
+
             session.commit();
             return true;
         }

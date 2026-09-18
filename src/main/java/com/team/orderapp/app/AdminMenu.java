@@ -2,6 +2,7 @@ package com.team.orderapp.app;
 
 import com.team.orderapp.product.ProductCommandMenu;
 import com.team.orderapp.stock.StockMenu;
+import com.team.orderapp.customer.CustomerMenu;
 
 
 import java.util.Scanner;
@@ -61,8 +62,7 @@ public class AdminMenu {
                     break;
 
                 case "3":
-                    // TODO: 회원 관리 메뉴 연결
-                    System.out.println("[TODO] 회원 관리");
+                    new CustomerMenu(scanner).DisplayMenu();
                     break;
 
                 case "4":

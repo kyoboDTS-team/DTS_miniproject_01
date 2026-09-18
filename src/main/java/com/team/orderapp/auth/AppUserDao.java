@@ -2,6 +2,7 @@ package com.team.orderapp.auth;
 
 import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Insert;
+import org.apache.ibatis.annotations.Options;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
@@ -34,11 +35,13 @@ public interface AppUserDao {
     Optional<AppUser> FindById(@Param("userId") Long userId);
 
     /**
-     * 신규 사용자를 등록합니다.
+     * 신규 사용자를 등록합니다. 성공하면 새로 생성된 user_id가 넘겨받은 user 객체에 채워집니다
+     * (customer.user_id로 연결하려면 이 값이 필요해서 useGeneratedKeys를 켜뒀습니다).
      *
      * @param user 저장할 AppUser 객체
      * @return 저장 성공 여부
      */
+    @Options(useGeneratedKeys = true, keyProperty = "userId", keyColumn = "user_id")
     @Insert("INSERT INTO app_user (email, password_hash, role_code, is_active) VALUES (#{email}, #{passwordHash}, #{roleCode}, #{isActive})")
     boolean Save(AppUser user);
 

@@ -15,6 +15,10 @@ public class CustomerMenu {
     private static final String DB_ERROR_MESSAGE = "DB 연결에 실패했습니다. 잠시 후 다시 시도해주세요.";
     private static final String COMMUNICATION_ERROR_MESSAGE = "통신 환경이 원활하지 않습니다. 잠시 후 다시 시도해주세요.";
     private static final String EMAIL_PATTERN = "^[\\w.-]+@[\\w.-]+\\.[a-zA-Z]{2,}$";
+    private static final String PHONE_PATTERN = "^01[016789]-?\\d{3,4}-?\\d{4}$";
+    // app_user.email varchar(254), customer.customer_name varchar(50) — 실제 DB 컬럼 길이에 맞춤 (2026-09-18 DBeaver로 확인)
+    private static final int EMAIL_MAX_LENGTH = 254;
+    private static final int NAME_MAX_LENGTH = 50;
     private static final int PAGE_SIZE = 10;
 
     /**
@@ -30,6 +34,15 @@ public class CustomerMenu {
     public CustomerMenu() {
         this.customerService = new CustomerService();
         this.scanner = new Scanner(System.in);
+    }
+
+    /**
+     * AdminMenu 등 상위 화면에서 이미 만들어 쓰고 있는 Scanner를 그대로 물려받아 씁니다.
+     * 앱 전체에서 Scanner(System.in)를 하나만 만들어 공유하는 규칙을 따르기 위함입니다.
+     */
+    public CustomerMenu(Scanner scanner) {
+        this.customerService = new CustomerService();
+        this.scanner = scanner;
     }
 
     /**
@@ -526,6 +539,10 @@ public class CustomerMenu {
             System.out.println("입력한 이름이 없어 수정하지 않았습니다.");
             return;
         }
+        if (newName.length() > NAME_MAX_LENGTH) {
+            System.out.println("이름이 너무 깁니다. (" + NAME_MAX_LENGTH + "자 이하)");
+            return;
+        }
         customer.setCustomerName(newName);
 
         try {
@@ -548,11 +565,25 @@ public class CustomerMenu {
         if (IsCancelled(newPhone)) {
             return;
         }
-        if (newPhone.isEmpty()) {
-            System.out.println("입력한 전화번호가 없어 수정하지 않았습니다.");
+        if (!newPhone.matches(PHONE_PATTERN)) {
+            System.out.println("전화번호 형식이 올바르지 않습니다.");
             return;
         }
-        customer.setPhone(newPhone);
+
+        String normalizedPhone = newPhone.replace("-", "");
+        try {
+            if (customerService.IsPhoneTaken(normalizedPhone, customer.getCustomerId())) {
+                System.out.println("이미 사용 중인 전화번호입니다.");
+                return;
+            }
+        } catch (IllegalStateException e) {
+            System.out.println(DB_ERROR_MESSAGE);
+            return;
+        } catch (Exception e) {
+            System.out.println(COMMUNICATION_ERROR_MESSAGE);
+            return;
+        }
+        customer.setPhone(normalizedPhone);
 
         try {
             boolean updated = customerService.Update(customer);
@@ -570,13 +601,17 @@ public class CustomerMenu {
      */
     private void UpdateEmail(Customer customer) {
         System.out.print("새 이메일/ID (현재: " + customer.getEmail() + ", 0: 취소, p: 회원 관리 메뉴로 이동): ");
-        String newEmail = scanner.nextLine().trim();
+        String newEmail = scanner.nextLine().trim().toLowerCase();
         CheckMainMenuShortcut(newEmail);
         if (IsCancelled(newEmail)) {
             return;
         }
         if (!newEmail.matches(EMAIL_PATTERN)) {
             System.out.println("이메일 형식이 올바르지 않습니다.");
+            return;
+        }
+        if (newEmail.length() > EMAIL_MAX_LENGTH) {
+            System.out.println("이메일이 너무 깁니다. (" + EMAIL_MAX_LENGTH + "자 이하)");
             return;
         }
 
