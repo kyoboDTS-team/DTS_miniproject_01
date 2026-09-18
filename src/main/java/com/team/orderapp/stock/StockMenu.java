@@ -378,7 +378,8 @@ public class StockMenu {
 
             PrintStockProducts(products);
 
-            
+            // 목록에서 바로 입고 가능
+            RunStockReceiveFromList(products);
 
         } catch (Exception e) {
 
@@ -416,6 +417,9 @@ public class StockMenu {
 
             PrintStockProducts(products);
 
+            // 부족 상품을 보고 바로 입고
+            RunStockReceiveFromList(products);
+
         } catch (Exception e) {
             System.out.println(
                     "재고 부족 상품 조회 실패: "
@@ -445,12 +449,299 @@ public class StockMenu {
             System.out.println(
                     "=========================================================================="
             );
+
             PrintStockProducts(products);
+
+            // 품절 상품을 보고 바로 입고
+            RunStockReceiveFromList(products);
+
         } catch (Exception e) {
             System.out.println(
                     "품절 상품 조회 실패: "
                             + e.getMessage()
             );
+        }
+    }
+
+    // ============================================================
+// 재고 목록에서 바로 입고 처리
+// ============================================================
+
+    private void RunStockReceiveFromList(
+            List<Product> products
+    ) {
+
+        // 조회 결과가 없으면 입고 메뉴도 실행하지 않음
+        if (products == null ||
+                products.isEmpty()) {
+
+            return;
+        }
+
+
+        while (true) {
+
+            System.out.println();
+            System.out.print(
+                    "입고할 상품 ID 입력 (0: 이전) > "
+            );
+
+            String input =
+                    scanner.nextLine().trim();
+
+
+            if (input.equals("0")) {
+                return;
+            }
+
+            try {
+                Long productId =
+                        Long.parseLong(input);
+
+                // 현재 화면에 출력된 상품인지 확인
+                Product selectedProduct = null;
+                for (Product product : products) {
+
+                    if (product.getProductId()
+                            .equals(productId)) {
+                        selectedProduct = product;
+                        break;
+                    }
+                }
+
+                if (selectedProduct == null) {
+
+                    System.out.println(
+                            "현재 목록에 없는 상품입니다."
+                    );
+                    continue;
+                }
+
+
+                System.out.println();
+                System.out.println(
+                        "선택 상품: "
+                                + selectedProduct
+                                .getProductName()
+                );
+
+
+                // 시리얼 관리 상품
+                if (Boolean.TRUE.equals(
+                        selectedProduct
+                                .getRequiresSerial()
+                )) {
+
+                    System.out.println(
+                            "시리얼 관리 상품입니다."
+                    );
+
+                    ReceiveSerialProduct(
+                            selectedProduct
+                    );
+
+                } else {
+
+                    // 일반 상품
+                    ReceiveNormalProduct(
+                            selectedProduct
+                    );
+                }
+
+
+                // 한 번 입고 후 목록 화면으로 복귀
+                return;
+
+            } catch (NumberFormatException e) {
+
+                System.out.println(
+                        "상품 ID는 숫자로 입력해 주세요."
+                );
+            }
+        }
+    }
+
+    // ============================================================
+    // 일반 상품 입고
+    // ============================================================
+
+    private void ReceiveNormalProduct(
+            Product product
+    ) {
+
+        System.out.println(
+                "현재 재고: "
+                        + product.getStockQuantity()
+        );
+
+        System.out.print(
+                "입고 수량 > "
+        );
+
+        String quantityInput =
+                scanner.nextLine().trim();
+
+        int quantity;
+
+        try {
+            quantity =
+                    Integer.parseInt(
+                            quantityInput
+                    );
+
+        } catch (NumberFormatException e) {
+            System.out.println(
+                    "입고 수량은 숫자로 입력해 주세요."
+            );
+
+            return;
+        }
+
+        if (quantity <= 0) {
+
+            System.out.println(
+                    "입고 수량은 1 이상이어야 합니다."
+            );
+            return;
+        }
+
+        System.out.print(
+                "입고 사유 > "
+        );
+
+        String reason =
+                scanner.nextLine().trim();
+
+        if (reason.isBlank()) {
+
+            System.out.println(
+                    "입고 사유를 입력해 주세요."
+            );
+
+            return;
+        }
+
+        try {
+
+            // 기존 재고 조정 Service 재사용
+            stockService.AdjustStock(
+                    product.getProductId(),
+                    quantity,
+                    reason,
+                    adminUserId
+            );
+
+            Product updatedProduct =
+                    stockService.FindProductById(
+                            product.getProductId()
+                    );
+            System.out.println();
+            System.out.println(
+                    "재고 입고가 완료되었습니다."
+            );
+
+            if (updatedProduct != null) {
+
+                System.out.println(
+                        "현재 재고: "
+                                + updatedProduct
+                                .getStockQuantity()
+                );
+            }
+
+        } catch (Exception e) {
+
+            System.out.println(
+                    "재고 입고 실패: "
+                            + e.getMessage()
+            );
+        }
+    }
+
+    // ============================================================
+    // 시리얼 상품 입고
+    // ============================================================
+
+    private void ReceiveSerialProduct(
+            Product product
+    ) {
+
+        System.out.println(
+                "현재 재고: "
+                        + product.getStockQuantity()
+        );
+
+        while (true) {
+
+            System.out.println();
+            System.out.print(
+                    "등록할 시리얼 번호 "
+                            + "(0: 종료) > "
+            );
+
+            String serialNumber =
+                    scanner.nextLine().trim();
+
+            if (serialNumber.equals("0")) {
+                return;
+            }
+
+            if (serialNumber.isBlank()) {
+
+                System.out.println(
+                        "시리얼 번호를 입력해 주세요."
+                );
+
+                continue;
+            }
+
+            try {
+
+                // 기존 시리얼 등록 기능 재사용
+                stockService.RegisterSerial(
+                        product.getProductId(),
+                        serialNumber
+                );
+
+                System.out.println(
+                        "시리얼 등록이 완료되었습니다."
+                );
+
+                Product updatedProduct =
+                        stockService.FindProductById(
+                                product.getProductId()
+                        );
+
+                if (updatedProduct != null) {
+
+                    System.out.println(
+                            "현재 재고: "
+                                    + updatedProduct
+                                    .getStockQuantity()
+                    );
+                }
+
+                System.out.print(
+                        "시리얼을 계속 등록하시겠습니까? "
+                                + "(Y/N) > "
+                );
+
+                String continueInput =
+                        scanner.nextLine()
+                                .trim()
+                                .toUpperCase();
+
+                if (!continueInput.equals("Y")) {
+                    return;
+                }
+
+            } catch (Exception e) {
+
+                System.out.println(
+                        "시리얼 등록 실패: "
+                                + e.getMessage()
+                );
+            }
         }
     }
 

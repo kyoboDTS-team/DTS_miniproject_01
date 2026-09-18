@@ -25,5 +25,7 @@
         <mapper class="com.team.orderapp.product.ProductUnitDao"/>
         <mapper class="com.team.orderapp.customer.CustomerDao"/>
         <mapper class="com.team.orderapp.auth.AppUserDao"/>
+        <mapper class="com.team.orderapp.stock.StockAdjustmentDao"/>
+        <mapper class="com.team.orderapp.report.ReportDao"/>
     </mappers>
 </configuration>
