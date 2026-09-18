@@ -1,5 +1,28 @@
 package com.team.orderapp.stock;
 
+import lombok.Getter;
+import lombok.Setter;
+
+import java.time.LocalDateTime;
+
+/**
+ * 상품 재고 조정 이력
+ */
+@Getter
+@Setter
 public class StockAdjustment {
-    // TODO: stock_adjustment 테이블과 매핑되는 재고 조정 내역(식별자, 상품 ID, 변동수량, 사유, 작업자 ID, 조정일시 등) 도메인 모델 구현
+
+    private Long adjustmentId;
+    private Long productId;
+
+    // +10 : 입고
+    // -3  : 파손 / 수동 차감
+    private Integer quantityDelta;
+
+    private String reason;
+
+    // 작업한 관리자 user_id
+    private Long adjustedByUserId;
+
+    private LocalDateTime adjustedAt;
 }

@@ -264,12 +264,13 @@ public interface ProductDao {
     // 나중에 재고 관리 기능에서 사용
     // =========================================================
     @Update("""
-            UPDATE product
-            SET stock_quantity = stock_quantity + #{delta}
-            WHERE product_id = #{productId}
-            """)
+    UPDATE product
+    SET stock_quantity = stock_quantity + #{delta}
+    WHERE product_id = #{productId}
+      AND stock_quantity + #{delta} >= 0
+    """)
     boolean UpdateStock(
             @Param("productId") Long productId,
-            @Param("delta") int delta
+            @Param("delta") int delt
     );
 }

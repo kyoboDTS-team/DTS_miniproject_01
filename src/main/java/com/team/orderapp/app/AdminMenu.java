@@ -1,5 +1,9 @@
 package com.team.orderapp.app;
 
+import com.team.orderapp.product.ProductCommandMenu;
+import com.team.orderapp.stock.StockMenu;
+
+
 import java.util.Scanner;
 
 /**
@@ -12,16 +16,20 @@ public class AdminMenu {
 
     private final Scanner scanner;
 
+    // 로그인한 관리자 PK
+    private final Long adminUserId;
+
     // 로그인한 관리자 이메일
     private final String email;
 
 
     public AdminMenu(
             Scanner scanner,
+            Long adminUserId,
             String email
     ) {
-
         this.scanner = scanner;
+        this.adminUserId = adminUserId;
         this.email = email;
     }
 
@@ -41,21 +49,15 @@ public class AdminMenu {
             switch (input) {
 
                 case "1":
-                    // TODO: 상품 / 카테고리 관리 메뉴 연결
-                    //
-                    // 종민 ProductCommandMenu가 완성되면 예:
-                    //
-                    // ProductCommandMenu productMenu =
-                    //         new ProductCommandMenu(scanner);
-                    //
-                    // productMenu.Run();
-                    //
-                    System.out.println("[TODO] 상품 / 카테고리 관리");
+
+                    ProductCommandMenu productMenu = new ProductCommandMenu(scanner);
+
+                    productMenu.Run();
                     break;
 
                 case "2":
-                    // TODO: 재고 / 시리얼 관리 메뉴 연결
-                    System.out.println("[TODO] 재고 / 시리얼 관리");
+                    StockMenu stockMenu = new StockMenu(scanner, adminUserId);
+                    stockMenu.Run();
                     break;
 
                 case "3":
