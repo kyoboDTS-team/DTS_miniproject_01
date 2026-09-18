@@ -5,6 +5,8 @@ import com.team.orderapp.stock.StockMenu;
 import com.team.orderapp.order.query.OrderQueryMenu;
 import com.team.orderapp.order.query.OrderAdminMenu;
 import com.team.orderapp.report.ReportMenu;
+import com.team.orderapp.export.ProductCsvMenu;
+
 
 import java.util.Scanner;
 
@@ -81,8 +83,9 @@ public class AdminMenu {
                     break;
 
                 case "6":
-                    // TODO: CSV 저장 / 불러오기 메뉴 연결
-                    System.out.println("[TODO] CSV 저장 / 불러오기");
+                    ProductCsvMenu csvMenu = new ProductCsvMenu(scanner);
+
+                    csvMenu.Run();
                     break;
 
                 case "7":
