@@ -117,6 +117,107 @@ public class ProductCommandMenu {
 
 
     // ============================================================
+    // 상품 수정
+    // 담당: 백종민
+    // ============================================================
+
+    private void UpdateProduct() {
+
+        System.out.println();
+        System.out.println(
+                "========================================"
+        );
+        System.out.println(
+                "              상품 수정"
+        );
+        System.out.println(
+                "========================================"
+        );
+
+
+        try {
+
+            Product product =
+                    new Product();
+
+
+            // 어떤 상품을 수정할지 선택
+            product.setProductId(
+                    ReadLong(
+                            "수정할 상품 ID > "
+                    )
+            );
+
+
+            // 새로운 상품명
+            product.setProductName(
+                    ReadRequiredString(
+                            "변경할 상품명 > "
+                    )
+            );
+
+
+            // 새로운 카테고리
+            product.setCategoryId(
+                    ReadLong(
+                            "변경할 카테고리 ID > "
+                    )
+            );
+
+
+            // 새로운 가격
+            product.setPrice(
+                    ReadBigDecimal(
+                            "변경할 가격 > "
+                    )
+            );
+
+
+            // 새로운 안전재고 기준
+            product.setReorderLevel(
+                    ReadInteger(
+                            "변경할 안전재고 > "
+                    )
+            );
+
+
+            // Service에 수정 요청
+            boolean result =
+                    productService
+                            .UpdateProduct(product);
+
+
+            if (result) {
+
+                System.out.println();
+                System.out.println(
+                        "상품이 정상적으로 수정되었습니다."
+                );
+
+            } else {
+
+                System.out.println();
+                System.out.println(
+                        "상품 수정에 실패했습니다."
+                );
+
+                System.out.println(
+                        "존재하지 않는 상품 ID인지 확인해 주세요."
+                );
+            }
+
+
+        } catch (Exception e) {
+
+            System.out.println(
+                    "상품 수정 오류: "
+                            + e.getMessage()
+            );
+        }
+    }
+
+
+    // ============================================================
     // 화면 출력
     // ============================================================
 

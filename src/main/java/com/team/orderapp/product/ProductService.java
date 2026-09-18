@@ -143,6 +143,121 @@ public class ProductService {
     // 담당: 백종민
     // ============================================================
 
+    /**
+     * 상품 수정
+     *
+     * 수정 대상:
+     * - 상품명
+     * - 카테고리
+     * - 가격
+     * - 안전재고
+     */
+    public boolean UpdateProduct(Product product) {
+
+        // 수정 입력값 검증
+        ValidateProductForUpdate(product);
+
+        try (SqlSession session = OpenSession()) {
+
+            try {
+
+                ProductDao productDao =
+                        GetProductDao(session);
+
+                // DB UPDATE
+                boolean result =
+                        productDao.Update(product);
+
+                // UPDATE된 행이 없으면
+                // 없는 상품 ID일 가능성이 있음
+                if (!result) {
+
+                    session.rollback();
+                    return false;
+                }
+
+                // 정상 수정
+                session.commit();
+
+                return true;
+
+            } catch (Exception e) {
+
+                // UPDATE 도중 오류가 나면 취소
+                session.rollback();
+
+                throw e;
+            }
+
+        } catch (Exception e) {
+
+            System.out.println(
+                    "상품 수정 중 오류: "
+                            + e.getMessage()
+            );
+
+            return false;
+        }
+    }
+
+
+    /**
+     * 상품 수정 입력값 검증
+     */
+    private void ValidateProductForUpdate(
+            Product product
+    ) {
+
+        if (product == null) {
+
+            throw new IllegalArgumentException(
+                    "상품 정보가 없습니다."
+            );
+        }
+
+        // 어떤 상품을 수정할지 반드시 필요
+        if (product.getProductId() == null ||
+                product.getProductId() <= 0) {
+
+            throw new IllegalArgumentException(
+                    "올바른 상품 ID를 입력해 주세요."
+            );
+        }
+
+        if (product.getProductName() == null ||
+                product.getProductName().isBlank()) {
+
+            throw new IllegalArgumentException(
+                    "상품명을 입력해 주세요."
+            );
+        }
+
+        if (product.getCategoryId() == null ||
+                product.getCategoryId() <= 0) {
+
+            throw new IllegalArgumentException(
+                    "올바른 카테고리 ID를 입력해 주세요."
+            );
+        }
+
+        if (product.getPrice() == null ||
+                product.getPrice()
+                        .compareTo(BigDecimal.ZERO) < 0) {
+
+            throw new IllegalArgumentException(
+                    "가격은 0원 이상이어야 합니다."
+            );
+        }
+
+        if (product.getReorderLevel() == null ||
+                product.getReorderLevel() < 0) {
+
+            throw new IllegalArgumentException(
+                    "안전재고는 0 이상이어야 합니다."
+            );
+        }
+    }
+
 
     // ============================================================
     // 상품 삭제 / 판매 상태 변경
