@@ -3,8 +3,13 @@ package com.team.orderapp.stock;
 import com.team.orderapp.product.ProductUnit;
 import com.team.orderapp.product.Product;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Scanner;
+
+
 
 /**
  * 관리자 재고 / 시리얼 관리 메뉴
@@ -66,6 +71,10 @@ public class StockMenu {
                     RunStockStatusMenu();
                     break;
 
+                case "5":
+                    RunAdjustmentHistoryMenu();
+                    break;
+
                 case "0":
                     return;
 
@@ -76,6 +85,56 @@ public class StockMenu {
                     );
             }
         }
+    }
+
+    // ============================================================
+    // 메뉴 출력
+    // 담당 : 백종민
+    // ============================================================
+
+    private void PrintMenu() {
+
+        System.out.println();
+        System.out.println(
+                "========================================"
+        );
+
+        System.out.println(
+                "          재고 / 시리얼 관리"
+        );
+
+        System.out.println(
+                "========================================"
+        );
+
+        System.out.println(
+                "1. 일반 상품 재고 입고 / 조정"
+        );
+
+        System.out.println(
+                "2. 시리얼 상품 입고 / 시리얼 등록"
+        );
+
+        System.out.println(
+                "3. 시리얼 목록 조회"
+        );
+        System.out.println(
+                "4. 재고 현황 / 부족 관리"
+        );
+        System.out.println(
+                "5. 재고 변경 이력"
+        );
+        System.out.println(
+                "0. 이전"
+        );
+
+        System.out.println(
+                "----------------------------------------"
+        );
+
+        System.out.print(
+                "선택 > "
+        );
     }
 
 
@@ -745,6 +804,145 @@ public class StockMenu {
         }
     }
 
+    private void RunAdjustmentHistoryMenu() {
+        while (true) {
+            System.out.println();
+            System.out.println("========================================");
+            System.out.println("             재고 변경 이력");
+            System.out.println("========================================");
+            System.out.println("1. 전체 변경 이력");
+            System.out.println("2. 상품별 변경 이력");
+            System.out.println("3. 기간별 변경 이력");
+            System.out.println("0. 이전");
+            System.out.println("----------------------------------------");
+            System.out.print("선택 > ");
+
+            String input = scanner.nextLine().trim();
+
+            switch (input) {
+                case "1":
+                    ShowAllAdjustmentHistory();
+                    break;
+                case "2":
+                    ShowAdjustmentHistoryByProduct();
+                    break;
+                case "3":
+                    ShowAdjustmentHistoryByPeriod();
+                    break;
+                case "0":
+                    return;
+                default:
+                    System.out.println("올바른 메뉴 번호를 입력해 주세요.");
+            }
+        }
+    }
+
+    private void ShowAllAdjustmentHistory() {
+        try {
+            List<StockAdjustmentHistory> histories =
+                    stockService.FindAllAdjustmentHistory();
+
+            System.out.println();
+            System.out.println("================ 전체 재고 변경 이력 ================");
+            PrintAdjustmentHistory(histories);
+
+        } catch (Exception e) {
+            System.out.println("재고 변경 이력 조회 실패: " + e.getMessage());
+        }
+    }
+
+    private void ShowAdjustmentHistoryByProduct() {
+        System.out.print("상품 ID > ");
+        String input = scanner.nextLine().trim();
+
+        try {
+            Long productId = Long.parseLong(input);
+
+            Product product = stockService.FindProductById(productId);
+            if (product == null) {
+                System.out.println("존재하지 않는 상품입니다.");
+                return;
+            }
+
+            List<StockAdjustmentHistory> histories =
+                    stockService.FindAdjustmentHistoryByProduct(productId);
+
+            System.out.println();
+            System.out.println("상품: " + product.getProductName());
+            System.out.println("================ 상품별 재고 변경 이력 ================");
+            PrintAdjustmentHistory(histories);
+
+        } catch (NumberFormatException e) {
+            System.out.println("상품 ID는 숫자로 입력해 주세요.");
+        } catch (Exception e) {
+            System.out.println("재고 변경 이력 조회 실패: " + e.getMessage());
+        }
+    }
+
+    private void ShowAdjustmentHistoryByPeriod() {
+        System.out.print("시작일 (YYYY-MM-DD) > ");
+        String startInput = scanner.nextLine().trim();
+
+        System.out.print("종료일 (YYYY-MM-DD) > ");
+        String endInput = scanner.nextLine().trim();
+
+        try {
+            LocalDate startDate = LocalDate.parse(startInput);
+            LocalDate endDate = LocalDate.parse(endInput);
+
+            List<StockAdjustmentHistory> histories =
+                    stockService.FindAdjustmentHistoryByPeriod(startDate, endDate);
+
+            System.out.println();
+            System.out.println(startDate + " ~ " + endDate);
+            System.out.println("================ 기간별 재고 변경 이력 ================");
+            PrintAdjustmentHistory(histories);
+
+        } catch (DateTimeParseException e) {
+            System.out.println("날짜는 YYYY-MM-DD 형식으로 입력해 주세요.");
+        } catch (Exception e) {
+            System.out.println("재고 변경 이력 조회 실패: " + e.getMessage());
+        }
+    }
+
+    private void PrintAdjustmentHistory(List<StockAdjustmentHistory> histories) {
+        if (histories == null || histories.isEmpty()) {
+            System.out.println("조회된 재고 변경 이력이 없습니다.");
+            return;
+        }
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+
+        System.out.printf(
+                "%-18s %-12s %-18s %-8s %-20s %-25s%n",
+                "변경일시", "상품코드", "상품명", "변경량", "사유", "관리자"
+        );
+
+        System.out.println(
+                "------------------------------------------------------------------------------------------------"
+        );
+
+        for (StockAdjustmentHistory history : histories) {
+            String admin = history.getAdjustedByEmail() != null
+                    ? history.getAdjustedByEmail()
+                    : "알 수 없음";
+
+            String delta = history.getQuantityDelta() > 0
+                    ? "+" + history.getQuantityDelta()
+                    : String.valueOf(history.getQuantityDelta());
+
+            System.out.printf(
+                    "%-18s %-12s %-18s %-8s %-20s %-25s%n",
+                    history.getAdjustedAt().format(formatter),
+                    history.getProductCode(),
+                    history.getProductName(),
+                    delta,
+                    history.getReason(),
+                    admin
+            );
+        }
+    }
+
     // ============================================================
     // 재고 상품 목록 공통 출력
     // ============================================================
@@ -806,52 +1004,7 @@ public class StockMenu {
         }
     }
 
-    // ============================================================
-    // 메뉴 출력
-    // 담당 : 백종민
-    // ============================================================
 
-    private void PrintMenu() {
-
-        System.out.println();
-        System.out.println(
-                "========================================"
-        );
-
-        System.out.println(
-                "          재고 / 시리얼 관리"
-        );
-
-        System.out.println(
-                "========================================"
-        );
-
-        System.out.println(
-                "1. 일반 상품 재고 입고 / 조정"
-        );
-
-        System.out.println(
-                "2. 시리얼 상품 입고 / 시리얼 등록"
-        );
-
-        System.out.println(
-                "3. 시리얼 목록 조회"
-        );
-        System.out.println(
-                "4. 재고 현황 / 부족 관리"
-        );
-        System.out.println(
-                "0. 이전"
-        );
-
-        System.out.println(
-                "----------------------------------------"
-        );
-
-        System.out.print(
-                "선택 > "
-        );
-    }
 
 
     // ============================================================

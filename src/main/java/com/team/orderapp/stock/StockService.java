@@ -8,6 +8,7 @@ import com.team.orderapp.product.ProductUnitDao;
 
 import org.apache.ibatis.session.SqlSession;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -458,6 +459,50 @@ public class StockService {
             return productDao
                     .FindById(productId)
                     .orElse(null);
+        }
+    }
+
+    // ============================================================
+    // 전체 재고 변경 이력 조회
+    // ============================================================
+    public List<StockAdjustmentHistory> FindAllAdjustmentHistory() {
+        try (SqlSession session = OpenSession()) {
+            StockAdjustmentDao dao = session.getMapper(StockAdjustmentDao.class);
+            return dao.FindAllHistory();
+        }
+    }
+
+    // ============================================================
+    // 상품별 재고 변경 이력 조회
+    // ============================================================
+    public List<StockAdjustmentHistory> FindAdjustmentHistoryByProduct(Long productId) {
+        if (productId == null || productId <= 0) {
+            throw new IllegalArgumentException("올바른 상품 ID를 입력해 주세요.");
+        }
+
+        try (SqlSession session = OpenSession()) {
+            StockAdjustmentDao dao = session.getMapper(StockAdjustmentDao.class);
+            return dao.FindHistoryByProductId(productId);
+        }
+    }
+
+    // ============================================================
+    // 기간별 재고 변경 이력 조회
+    // ============================================================
+    public List<StockAdjustmentHistory> FindAdjustmentHistoryByPeriod(
+            LocalDate startDate, LocalDate endDate) {
+
+        if (startDate == null || endDate == null) {
+            throw new IllegalArgumentException("조회 기간을 입력해 주세요.");
+        }
+
+        if (startDate.isAfter(endDate)) {
+            throw new IllegalArgumentException("시작일은 종료일보다 이후일 수 없습니다.");
+        }
+
+        try (SqlSession session = OpenSession()) {
+            StockAdjustmentDao dao = session.getMapper(StockAdjustmentDao.class);
+            return dao.FindHistoryByPeriod(startDate, endDate);
         }
     }
 }
