@@ -1,68 +1,43 @@
 package com.team.orderapp.app;
 
 import com.team.orderapp.common.DbConnectionFactory;
-import com.team.orderapp.product.Product;
-import com.team.orderapp.product.ProductDao;
-import org.apache.ibatis.session.SqlSession;
 
-import java.util.List;
+import java.util.Scanner;
 
 /**
- * 애플리케이션 진입점(Entry Point) 클래스입니다.
+ * 애플리케이션 진입점
+ *
+ * Main에서는 세부 기능을 구현하지 않고
+ * 프로그램 시작과 최초 메뉴 실행만 담당합니다.
  */
 public class Main {
 
     public static void main(String[] args) {
-        RunOrderSystem();
-        BootstrapApplication(args);
-    }
 
-    private static void RunOrderSystem() {
+        // DB / MyBatis 초기화 확인
         if (DbConnectionFactory.GetFactory() == null) {
-            System.out.println("MyBatisFactory가 초기화되지 않았습니다. config/db.properties 설정을 확인해 주세요.");
+
+            System.out.println(
+                    "MyBatisFactory가 초기화되지 않았습니다."
+            );
+
+            System.out.println(
+                    "config/db.properties 설정을 확인해 주세요."
+            );
+
             return;
         }
 
-        try (SqlSession session = DbConnectionFactory.GetFactory().openSession()) {
-            // productDao Mapper 가져오기
-            ProductDao mapper = session.getMapper(ProductDao.class);
 
-            // 전체 목록 데려와서 출력 (SELECT)
-            List<Product> products = mapper.GetAllProducts();
+        // Scanner는 Main에서 하나만 생성해서
+        // 모든 메뉴가 같이 사용하도록 함
+        try (Scanner scanner = new Scanner(System.in)) {
 
-            System.out.println("\n=== 등록된 상품 목록 ===");
-            if (products == null || products.isEmpty()) {
-                System.out.println("(등록된 상품이 없습니다.)");
-            } else {
-                System.out.println("조회된 상품 개수: " + products.size());
+            // 프로그램 최초 진입은 비회원 메뉴
+            GuestMenu guestMenu =
+                    new GuestMenu(scanner);
 
-                // 등록된 상품 전체 띄우기
-//                for (Product product : products) {
-//                    System.out.println(product);
-//                    }
-            }
-
-
-        } catch (Exception e) {
-            System.out.println("시스템 오류: " + e.getMessage());
+            guestMenu.Run();
         }
-    }
-
-    /**
-     * 애플리케이션 초기화 및 실행 흐름을 시작하는 헬퍼 메서드입니다.
-     *
-     * @param args 커맨드라인 인자 배열
-     */
-    private static void BootstrapApplication(String[] args) {
-        PrintStartupBanner();
-    }
-
-    /**
-     * 애플리케이션 시작 시 환영 배너를 출력하는 헬퍼 메서드입니다.
-     */
-    private static void PrintStartupBanner() {
-        System.out.println("==================================================");
-        System.out.println("       주문/재고 관리 시스템 (OrderApp) v1.0       ");
-        System.out.println("==================================================");
     }
 }
