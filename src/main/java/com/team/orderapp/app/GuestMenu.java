@@ -1,5 +1,7 @@
 package com.team.orderapp.app;
 
+import com.team.orderapp.auth.SignupMenu;
+
 import java.util.Scanner;
 
 /**
@@ -63,8 +65,7 @@ public class GuestMenu {
                     break;
 
                 case "6":
-                    // TODO: 회원가입 메뉴 연결
-                    System.out.println("[TODO] 회원가입");
+                    new SignupMenu(scanner).SignUp();
                     break;
 
                 case "0":

@@ -23,5 +23,7 @@
         <mapper class="com.team.orderapp.product.ProductDao"/>
         <mapper class="com.team.orderapp.product.CategoryDao"/>
         <mapper class="com.team.orderapp.product.ProductUnitDao"/>
+        <mapper class="com.team.orderapp.customer.CustomerDao"/>
+        <mapper class="com.team.orderapp.auth.AppUserDao"/>
     </mappers>
 </configuration>
