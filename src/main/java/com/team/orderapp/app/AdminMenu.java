@@ -2,7 +2,8 @@ package com.team.orderapp.app;
 
 import com.team.orderapp.product.ProductCommandMenu;
 import com.team.orderapp.stock.StockMenu;
-
+import com.team.orderapp.order.query.OrderQueryMenu;
+import com.team.orderapp.order.query.OrderAdminMenu;
 
 import java.util.Scanner;
 
@@ -66,8 +67,10 @@ public class AdminMenu {
                     break;
 
                 case "4":
-                    // TODO: 관리자 주문 / 반품 관리 메뉴 연결
-                    System.out.println("[TODO] 주문 / 반품 관리");
+                    // 관리자 주문 / 반품 관리
+                    OrderAdminMenu orderAdminMenu = new OrderAdminMenu(scanner);
+
+                    orderAdminMenu.Run();
                     break;
 
                 case "5":
