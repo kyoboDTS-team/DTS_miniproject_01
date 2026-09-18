@@ -1,6 +1,7 @@
 package com.team.orderapp.app;
 
 import com.team.orderapp.auth.SignupMenu;
+import com.team.orderapp.product.ProductMenu;
 
 import java.util.Scanner;
 
@@ -13,9 +14,10 @@ import java.util.Scanner;
 public class GuestMenu {
 
     private final Scanner scanner;
-
+    private final ProductMenu productMenu;
     public GuestMenu(Scanner scanner) {
         this.scanner = scanner;
+        this.productMenu = new ProductMenu(scanner);
     }
 
 
@@ -36,12 +38,14 @@ public class GuestMenu {
                 case "1":
                     // TODO: 상품 전체 조회 메뉴 연결
                     // 예: productMenu.ShowAllProducts();
+                    productMenu.ShowAllProducts();
                     System.out.println("[TODO] 상품 전체 조회");
                     break;
 
                 case "2":
                     // TODO: 상품 조건 조회 메뉴 연결
                     // 카테고리 / 최소가격 / 최대가격
+                    productMenu.ShowProductsByCondition();
                     System.out.println("[TODO] 상품 조건 조회");
                     break;
 

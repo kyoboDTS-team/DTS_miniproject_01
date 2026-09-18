@@ -140,7 +140,7 @@ public class ProductService {
     // ============================================================
 
     //전체 상품 조회
-    private List<Product> FindAllProducts() {
+    public List<Product> FindAllProducts() {
 
         try (SqlSession session = OpenSession()) {
 
@@ -152,7 +152,7 @@ public class ProductService {
     }
 
     //상품 번호로 조회
-    private Optional<Product> FindProductById(Long productId) {
+    public Optional<Product> FindProductById(Long productId) {
 
         try(SqlSession session = OpenSession()){
 

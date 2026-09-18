@@ -3,9 +3,9 @@ package com.team.orderapp.order.query;
 import java.util.Scanner;
 
 /**
- * 관리자 주문 / 반품 관리 메뉴
+ * 회원,비회원 주문 / 반품 관리 메뉴
  *
- * 주문 조회 기능이 완성되면 OrderQueryService를 연결하고,
+ *
  * 반품 기능이 완성되면 OrderCommandService를 연결하면 됨.
  */
 public class OrderQueryMenu {
@@ -20,7 +20,7 @@ public class OrderQueryMenu {
 
 
     // ============================================================
-    // 관리자 주문 / 반품 관리 메인
+    // 회원, 비회원 주문 / 반품 관리 메인
     // ============================================================
 
     public void RunAdminMenu() {
