@@ -49,6 +49,16 @@ public class ProductCommandMenu {
                     DeleteProduct();
                     break;
 
+                case "5":
+
+                    // 카테고리 관리 메뉴 진입
+                    CategoryMenu categoryMenu =
+                            new CategoryMenu(scanner);
+
+                    categoryMenu.Run();
+
+                    break;
+
                 case "0":
                     return;
 
