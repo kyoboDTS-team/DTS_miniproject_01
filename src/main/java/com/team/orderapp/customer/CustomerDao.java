@@ -29,7 +29,9 @@ public interface CustomerDao {
      * @param customerId 조회할 고객 ID
      * @return 조회된 Customer Optional 객체
      */
-    @Select("SELECT customer_id, user_id, customer_name, phone, created_at FROM customer WHERE customer_id = #{customerId}")
+    @Select("SELECT c.customer_id, c.user_id, c.customer_name, c.phone, c.created_at, u.email " +
+            "FROM customer c JOIN app_user u ON c.user_id = u.user_id " +
+            "WHERE c.customer_id = #{customerId}")
     Optional<Customer> FindById(@Param("customerId") Long customerId);
 
     /**
@@ -46,8 +48,68 @@ public interface CustomerDao {
      *
      * @return 고객 목록 리스트
      */
-    @Select("SELECT customer_id, user_id, customer_name, phone, created_at FROM customer ORDER BY customer_id")
+    @Select("SELECT c.customer_id, c.user_id, c.customer_name, c.phone, c.created_at, u.email " +
+            "FROM customer c JOIN app_user u ON c.user_id = u.user_id " +
+            "ORDER BY c.customer_id")
     List<Customer> FindAll();
+
+    /**
+     * 전체 고객 수를 조회합니다. 페이지 개수를 계산할 때 사용합니다.
+     *
+     * @return 전체 고객 수
+     */
+    @Select("SELECT COUNT(*) FROM customer")
+    long CountAll();
+
+    /**
+     * 고객 목록을 페이지 단위로 나누어 조회합니다.
+     *
+     * @param limit  한 페이지에 보여줄 개수
+     * @param offset 건너뛸 개수 (0부터 시작)
+     * @return 해당 페이지에 속하는 고객 목록
+     */
+    @Select("SELECT c.customer_id, c.user_id, c.customer_name, c.phone, c.created_at, u.email " +
+            "FROM customer c JOIN app_user u ON c.user_id = u.user_id " +
+            "ORDER BY c.customer_id LIMIT #{limit} OFFSET #{offset}")
+    List<Customer> FindPage(@Param("limit") int limit, @Param("offset") int offset);
+
+    /**
+     * 이름으로 고객을 조회합니다. 동명이인이 있으면 여러 명이 반환될 수 있습니다.
+     *
+     * @param customerName 검색할 이름
+     * @return 검색된 고객 목록
+     */
+    @Select("SELECT c.customer_id, c.user_id, c.customer_name, c.phone, c.created_at, u.email " +
+            "FROM customer c JOIN app_user u ON c.user_id = u.user_id " +
+            "WHERE c.customer_name LIKE CONCAT('%', #{customerName}, '%') ORDER BY c.customer_id")
+    List<Customer> FindByName(@Param("customerName") String customerName);
+
+    /**
+     * 이름 또는 전화번호에 검색어가 포함된 고객을 조회합니다.
+     * 전화번호는 하이픈(-)을 무시하고 비교하므로, "010"을 뗀 8자리나 뒷자리 4자리만 입력해도 검색됩니다.
+     *
+     * @param keyword 검색어
+     * @return 검색된 고객 목록
+     */
+    @Select("SELECT c.customer_id, c.user_id, c.customer_name, c.phone, c.created_at, u.email " +
+            "FROM customer c JOIN app_user u ON c.user_id = u.user_id " +
+            "WHERE c.customer_name LIKE CONCAT('%', #{keyword}, '%') " +
+            "OR REPLACE(c.phone, '-', '') LIKE CONCAT('%', REPLACE(#{keyword}, '-', ''), '%') " +
+            "ORDER BY c.customer_id")
+    List<Customer> SearchByNameOrPhone(@Param("keyword") String keyword);
+
+    /**
+     * 이름 또는 이메일(아이디)에 검색어가 포함된 고객을 조회합니다. 정보 수정 대상을 찾을 때 사용합니다.
+     *
+     * @param keyword 검색어
+     * @return 검색된 고객 목록
+     */
+    @Select("SELECT c.customer_id, c.user_id, c.customer_name, c.phone, c.created_at, u.email " +
+            "FROM customer c JOIN app_user u ON c.user_id = u.user_id " +
+            "WHERE c.customer_name LIKE CONCAT('%', #{keyword}, '%') " +
+            "OR u.email LIKE CONCAT('%', #{keyword}, '%') " +
+            "ORDER BY c.customer_id")
+    List<Customer> SearchByNameOrEmail(@Param("keyword") String keyword);
 
     /**
      * 고객 정보를 갱신합니다.

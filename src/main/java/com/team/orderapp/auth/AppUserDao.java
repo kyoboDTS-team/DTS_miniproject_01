@@ -6,31 +6,23 @@ import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.Optional;
 
 /**
- * 사용자 정보 데이터베이스 접근 객체(DAO) 클래스입니다.
+ * 사용자(로그인 계정) 정보 데이터베이스 접근 객체(DAO/Mapper) 인터페이스입니다.
+ * 실제 DB의 로그인 식별 컬럼명은 sql/schema.sql 문서상의 login_id가 아니라 email이다
+ * (2026-09-18 실제 DB 조회로 확인, 문서와 실제 DB가 어긋나 있는 상태).
  */
-public class AppUserDao {
-
-    @Select("SELECT user_id, email, password_hash, role_code, is_active, created_at FROM app_user WHERE email = #{email}")
-    public Optional<AppUser> FindByEmail(@Param("email") String email) {
-        return Optional.empty();
-    }
+public interface AppUserDao {
 
     /**
-     * 사용자명을 기준으로 사용자를 단건 조회합니다.
+     * 이메일(로그인 아이디)을 기준으로 사용자를 단건 조회합니다.
      *
-     * @param username 조회할 사용자명
+     * @param email 조회할 이메일
      * @return 조회된 AppUser Optional 객체
      */
-    @Select("SELECT user_id, email, password_hash, role_code, is_active, created_at FROM app_user WHERE email = #{username}")
-    public Optional<AppUser> FindByUsername(String username) {
-        // TODO: SQL 실행 및 사용자 조회 구현
-        return Optional.empty();
-    }
+    @Select("SELECT user_id, email, password_hash, role_code, is_active, created_at FROM app_user WHERE email = #{email}")
+    Optional<AppUser> FindByEmail(@Param("email") String email);
 
     /**
      * 사용자 식별자(ID)를 기준으로 사용자를 단건 조회합니다.
@@ -39,10 +31,7 @@ public class AppUserDao {
      * @return 조회된 AppUser Optional 객체
      */
     @Select("SELECT user_id, email, password_hash, role_code, is_active, created_at FROM app_user WHERE user_id = #{userId}")
-    public Optional<AppUser> FindById(Long userId) {
-        // TODO: SQL 실행 및 사용자 조회 구현
-        return Optional.empty();
-    }
+    Optional<AppUser> FindById(@Param("userId") Long userId);
 
     /**
      * 신규 사용자를 등록합니다.
@@ -51,10 +40,7 @@ public class AppUserDao {
      * @return 저장 성공 여부
      */
     @Insert("INSERT INTO app_user (email, password_hash, role_code, is_active) VALUES (#{email}, #{passwordHash}, #{roleCode}, #{isActive})")
-    public boolean Save(AppUser user) {
-        // TODO: 사용자 INSERT 쿼리 구현
-        return false;
-    }
+    boolean Save(AppUser user);
 
     /**
      * 사용자 정보를 수정합니다.
@@ -63,10 +49,18 @@ public class AppUserDao {
      * @return 수정 성공 여부
      */
     @Update("UPDATE app_user SET password_hash = #{passwordHash}, role_code = #{roleCode}, is_active = #{isActive} WHERE user_id = #{userId}")
-    public boolean Update(AppUser user) {
-        // TODO: 사용자 UPDATE 쿼리 구현
-        return false;
-    }
+    boolean Update(AppUser user);
+
+    /**
+     * 로그인 이메일(아이디)만 수정합니다. email 컬럼은 uq_app_user_email 유니크 제약이 있어,
+     * 이미 쓰이는 이메일로 바꾸려 하면 DB가 예외를 던집니다.
+     *
+     * @param userId 수정할 사용자 ID
+     * @param email  새 이메일
+     * @return 수정 성공 여부
+     */
+    @Update("UPDATE app_user SET email = #{email} WHERE user_id = #{userId}")
+    boolean UpdateEmail(@Param("userId") Long userId, @Param("email") String email);
 
     /**
      * 사용자 식별자로 사용자를 삭제합니다.
@@ -75,20 +69,5 @@ public class AppUserDao {
      * @return 삭제 성공 여부
      */
     @Delete("DELETE FROM app_user WHERE user_id = #{userId}")
-    public boolean DeleteById(Long userId) {
-        // TODO: 사용자 DELETE 쿼리 구현
-        return false;
-    }
-
-    /**
-     * ResultSet 결과 행을 AppUser 객체로 매핑하는 헬퍼 메서드입니다.
-     *
-     * @param resultSet SQL 쿼리 결과셋
-     * @return 매핑된 AppUser 객체
-     * @throws SQLException 매핑 실패 시 발생
-     */
-    private AppUser MapResultSetToUser(ResultSet resultSet) throws SQLException {
-        AppUser user = new AppUser();
-        return user;
-    }
+    boolean DeleteById(@Param("userId") Long userId);
 }
