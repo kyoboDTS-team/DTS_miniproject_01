@@ -31,48 +31,31 @@ public class ReportMenu {
         while (true) {
 
             PrintMenu();
-
-            String input =
-                    scanner.nextLine().trim();
-
+            String input = scanner.nextLine().trim();
 
             switch (input) {
 
                 case "1":
-
-                    // 전체 매출 합계
-                    ShowTotalSales();
-
+                    ShowAdminDashboard();
                     break;
-
 
                 case "2":
-
-                    // 일별 주문 / 매출 통계
-                    ShowDailySalesStats();
-
+                    ShowTotalSales();
                     break;
-
 
                 case "3":
-
-                    // 상품별 판매 통계
-                    ShowProductSalesStats();
-
+                    ShowDailySalesStats();
                     break;
 
+                case "4":
+                    ShowProductSalesStats();
+                    break;
 
                 case "0":
-
-                    // 관리자 메뉴로 복귀
                     return;
 
-
                 default:
-
-                    System.out.println(
-                            "올바른 메뉴 번호를 입력해 주세요."
-                    );
+                    System.out.println("올바른 메뉴 번호를 입력해 주세요.");
             }
         }
     }
@@ -289,49 +272,57 @@ public class ReportMenu {
         }
     }
 
+    // ============================================================
+    // 관리자 현황 요약 출력
+    // ============================================================
+    private void ShowAdminDashboard() {
+
+        try {
+            AdminDashboardStat stat = reportService.GetAdminDashboardStat();
+
+            System.out.println();
+            System.out.println("========================================");
+            System.out.println("             관리자 현황 요약");
+            System.out.println("========================================");
+
+            System.out.println("전체 상품        : " + stat.getTotalProductCount() + "개");
+            System.out.println("판매중 상품      : " + stat.getSellingProductCount() + "개");
+            System.out.println("판매중지 상품    : " + stat.getStoppedProductCount() + "개");
+
+            System.out.println();
+
+            System.out.println("재고 부족 상품   : " + stat.getLowStockProductCount() + "개");
+            System.out.println("품절 상품        : " + stat.getOutOfStockProductCount() + "개");
+            System.out.println("시리얼 상품      : " + stat.getSerialProductCount() + "개");
+
+            System.out.println();
+            System.out.println("전체 매출        : " + FormatMoney(stat.getTotalSales()) + "원");
+
+            System.out.println("========================================");
+
+        } catch (Exception e) {
+            System.out.println("관리자 현황 조회 실패: " + e.getMessage());
+        }
+    }
 
     // ============================================================
-    // 메뉴 출력
+    // 통계 메뉴 출력
     // ============================================================
-
     private void PrintMenu() {
 
         System.out.println();
-        System.out.println(
-                "========================================"
-        );
+        System.out.println("========================================");
+        System.out.println("                 통계");
+        System.out.println("========================================");
 
-        System.out.println(
-                "                 통계"
-        );
+        System.out.println("1. 관리자 현황 요약");
+        System.out.println("2. 전체 매출 합계");
+        System.out.println("3. 일별 주문 / 매출 통계");
+        System.out.println("4. 상품별 판매 통계");
+        System.out.println("0. 이전");
 
-        System.out.println(
-                "========================================"
-        );
-
-        System.out.println(
-                "1. 전체 매출 합계"
-        );
-
-        System.out.println(
-                "2. 일별 주문 / 매출 통계"
-        );
-
-        System.out.println(
-                "3. 상품별 판매 통계"
-        );
-
-        System.out.println(
-                "0. 이전"
-        );
-
-        System.out.println(
-                "----------------------------------------"
-        );
-
-        System.out.print(
-                "선택 > "
-        );
+        System.out.println("----------------------------------------");
+        System.out.print("선택 > ");
     }
 
 

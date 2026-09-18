@@ -87,4 +87,22 @@ public class ReportService {
 
         return session;
     }
+
+    // ============================================================
+    // 관리자 현황 요약 조회
+    // ============================================================
+    public AdminDashboardStat GetAdminDashboardStat() {
+
+        try (SqlSession session = OpenSession()) {
+            ReportDao reportDao = session.getMapper(ReportDao.class);
+
+            AdminDashboardStat stat = reportDao.GetAdminDashboardStat();
+
+            // 기존 전체 매출 조회 기능 재사용
+            BigDecimal totalSales = reportDao.GetTotalSales();
+            stat.setTotalSales(totalSales != null ? totalSales : BigDecimal.ZERO);
+
+            return stat;
+        }
+    }
 }
