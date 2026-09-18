@@ -334,6 +334,80 @@ public class ProductCommandMenu {
     }
 
     // ============================================================
+// 상품 삭제
+// 담당: 백종민
+// ============================================================
+
+    private void DeleteProduct() {
+
+        System.out.println();
+        System.out.println("========================================");
+        System.out.println("              상품 삭제");
+        System.out.println("========================================");
+
+
+        try {
+
+            // 삭제할 상품 선택
+            Long productId =
+                    ReadLong("삭제할 상품 ID > ");
+
+
+            // 실수로 삭제하는 것을 막기 위한 최종 확인
+            System.out.print(
+                    "정말 삭제하시겠습니까? (Y/N) > "
+            );
+
+            String confirm =
+                    scanner.nextLine()
+                            .trim()
+                            .toUpperCase();
+
+
+            if (!confirm.equals("Y")) {
+
+                System.out.println(
+                        "상품 삭제를 취소했습니다."
+                );
+
+                return;
+            }
+
+
+            // Service에서 존재 여부와 이력을 모두 검사
+            boolean result =
+                    productService.DeleteProduct(productId);
+
+
+            if (result) {
+
+                System.out.println();
+                System.out.println(
+                        "상품이 정상적으로 삭제되었습니다."
+                );
+
+            } else {
+
+                System.out.println();
+                System.out.println(
+                        "상품 삭제에 실패했습니다."
+                );
+            }
+
+
+        } catch (Exception e) {
+
+            // 존재하지 않는 상품 / 이력 있는 상품 등의 이유 출력
+            System.out.println();
+            System.out.println(
+                    "상품 삭제 실패: "
+                            + e.getMessage()
+            );
+        }
+    }
+
+
+    // ============================================================
     // 화면 출력
     // ============================================================
 
@@ -346,6 +420,7 @@ public class ProductCommandMenu {
         System.out.println("1. 상품 등록");
         System.out.println("2. 상품 수정");
         System.out.println("3. 판매 상태 변경");
+        System.out.println("4. 상품 삭제");
 
         // 이후 추가 예정
         // 2. 상품 수정
