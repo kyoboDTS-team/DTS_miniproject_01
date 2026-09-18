@@ -31,11 +31,6 @@ public class CustomerMenu {
     // common/ConsoleInput이 아직 구현되지 않아 임시로 직접 사용. 완성되면 교체 필요.
     private final Scanner scanner;
 
-    public CustomerMenu() {
-        this.customerService = new CustomerService();
-        this.scanner = new Scanner(System.in);
-    }
-
     /**
      * AdminMenu 등 상위 화면에서 이미 만들어 쓰고 있는 Scanner를 그대로 물려받아 씁니다.
      * 앱 전체에서 Scanner(System.in)를 하나만 만들어 공유하는 규칙을 따르기 위함입니다.
