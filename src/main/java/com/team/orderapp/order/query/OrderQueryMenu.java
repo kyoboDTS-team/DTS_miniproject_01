@@ -1,5 +1,11 @@
 package com.team.orderapp.order.query;
 
+import java.math.BigDecimal;
+import java.text.NumberFormat;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
+import java.util.Locale;
+import java.util.Optional;
 import java.util.Scanner;
 
 /**
@@ -12,410 +18,449 @@ public class OrderQueryMenu {
 
     private final Scanner scanner;
 
+    private final OrderQueryService orderQueryService;
 
+    private final DateTimeFormatter dateTimeFormatter =
+            DateTimeFormatter.ofPattern(
+                    "yyyy-MM-dd HH:mm"
+            );
     public OrderQueryMenu(Scanner scanner) {
 
         this.scanner = scanner;
+
+        this.orderQueryService =
+                new OrderQueryService();
     }
 
 
     // ============================================================
-    // 회원, 비회원 주문 / 반품 관리 메인
+    // 비회원 주문 조회 (GuestMenu 4번에서 호출)
     // ============================================================
 
-    public void RunAdminMenu() {
+    /**
+     * 비회원이 주문번호로 주문 상세를 조회합니다.
+     */
+    public void ShowGuestOrder() {
 
-        while (true) {
+        System.out.println();
+        System.out.println("========================================");
+        System.out.println("           비회원 주문 조회");
+        System.out.println("========================================");
+        System.out.println("이전으로 가려면 0을 입력하세요.");
+        System.out.print("주문번호 > ");
 
-            PrintAdminMenu();
+        String orderNo =
+                scanner.nextLine().trim();
 
-            String input =
-                    scanner.nextLine().trim();
+        // 이전 화면으로 이동
+        if (orderNo.equals("0")) {
+            return;
+        }
 
-            switch (input) {
+        if (orderNo.isBlank()) {
+            System.out.println(
+                    "주문번호를 입력해주세요."
+            );
+            return;
+        }
 
-                case "1":
+        try {
+            Optional<OrderDetailView> result =
+                    orderQueryService.FindDetailByOrderNo(
+                            orderNo
+                    );
 
-                    // TODO:
-                    // 전체 주문 조회
-                    // OrderQueryService.FindAllOrders() 연결 예정
-                    ShowAllOrders();
+            if (result.isEmpty()) {
+                System.out.println(
+                        "일치하는 주문을 찾을 수 없습니다."
+                );
+                return;
+            }
 
-                    break;
+            PrintOrderDetail(result.get());
 
+        } catch (IllegalArgumentException |
+                 IllegalStateException e) {
 
-                case "2":
+            System.out.println(e.getMessage());
 
-                    // TODO:
-                    // 주문 상태별 조회
-                    // CONFIRMED / RETURNED
-                    ShowOrdersByStatus();
+        } catch (Exception e) {
 
-                    break;
+            System.out.println(
+                    "주문 조회 중 오류가 발생했습니다."
+            );
 
+            System.out.println(e.getMessage());
+        }
+    }
+    // =====================================================
+    // 회원 내 주문 목록 / 상세
+    // MemberMenu 4번에서 호출
+    // =====================================================
 
-                case "3":
+    /**
+     * 로그인한 회원의 주문 목록을 조회합니다.
+     *
+     * @param customerId 로그인한 회원의 customer PK
+     */
+    public void ShowMyOrders(Long customerId) {
 
-                    // TODO:
-                    // 주문 기간별 조회
-                    ShowOrdersByDate();
+        try {
+            /*
+             * customerId를 조건으로 회원 본인의
+             * 주문 목록만 조회합니다.
+             */
+            List<OrderSummaryView> orders =
+                    orderQueryService.FindMyOrders(
+                            customerId
+                    );
 
-                    break;
+            if (orders == null || orders.isEmpty()) {
 
+                System.out.println();
+                System.out.println(
+                        "주문 내역이 없습니다."
+                );
 
-                case "4":
+                return;
+            }
 
-                    // TODO:
-                    // 회원 / 비회원 주문 조회
-                    ShowOrdersByCustomerType();
+            while (true) {
 
-                    break;
+                System.out.println();
+                System.out.println("========================================");
+                System.out.println("             내 주문 목록");
+                System.out.println("========================================");
 
+                PrintOrderSummaries(orders);
 
-                case "5":
+                System.out.println(
+                        "상세 조회할 주문 ID를 입력하세요."
+                );
+                System.out.println("0. 이전");
+                System.out.println("----------------------------------------");
+                System.out.print("선택 > ");
 
-                    // TODO:
-                    // 주문 번호 또는 ID로 상세 조회
-                    ShowOrderDetail();
+                String input =
+                        scanner.nextLine().trim();
 
-                    break;
-
-
-                case "6":
-
-                    // TODO:
-                    // 다른 조원의 반품 기능 완성 후
-                    // OrderCommandService.returnOrder(...) 연결
-                    ReturnOrder();
-
-                    break;
-
-
-                case "0":
-
-                    // 관리자 메인 메뉴로 복귀
+                if (input.equals("0")) {
                     return;
+                }
 
+                try {
+                    long orderId =
+                            Long.parseLong(input);
 
-                default:
+                    /*
+                     * 현재 출력된 본인 주문 목록에
+                     * 입력한 주문 ID가 있는지 확인합니다.
+                     */
+                    if (!ContainsOrder(
+                            orders,
+                            orderId
+                    )) {
+
+                        System.out.println(
+                                "목록에 있는 주문 ID를 입력해주세요."
+                        );
+
+                        continue;
+                    }
+
+                    ShowMyOrderDetail(
+                            orderId,
+                            customerId
+                    );
+
+                } catch (NumberFormatException e) {
 
                     System.out.println(
-                            "올바른 메뉴 번호를 입력해 주세요."
+                            "주문 ID는 숫자로 입력해주세요."
                     );
+                }
+            }
+
+        } catch (IllegalArgumentException |
+                 IllegalStateException e) {
+
+            System.out.println(e.getMessage());
+
+        } catch (Exception e) {
+
+            System.out.println(
+                    "주문 조회 중 오류가 발생했습니다."
+            );
+
+            System.out.println(e.getMessage());
+        }
+    }
+    // =====================================================
+    // 회원 본인 주문 상세 조회
+    // =====================================================
+
+    /**
+     * orderId와 customerId를 모두 조건으로 사용하여
+     * 회원 본인의 주문만 상세 조회합니다.
+     */
+    private void ShowMyOrderDetail(
+            Long orderId,
+            Long customerId
+    ) {
+
+        Optional<OrderDetailView> result =
+                orderQueryService.FindMyOrderDetail(
+                        orderId,
+                        customerId
+                );
+
+        if (result.isEmpty()) {
+
+            System.out.println(
+                    "주문을 찾을 수 없거나 "
+                            + "본인의 주문이 아닙니다."
+            );
+
+            return;
+        }
+
+        PrintOrderDetail(result.get());
+    }
+    // =====================================================
+    // 현재 목록에 주문이 존재하는지 확인
+    // =====================================================
+
+    private boolean ContainsOrder(
+            List<OrderSummaryView> orders,
+            long orderId
+    ) {
+
+        for (OrderSummaryView order : orders) {
+
+            if (order.getOrderId() != null &&
+                    order.getOrderId() == orderId) {
+
+                return true;
             }
         }
+
+        return false;
     }
 
+    // =====================================================
+    // 주문 목록 출력
+    // =====================================================
 
-    // ============================================================
-    // 1. 전체 주문 조회
-    // ============================================================
+    private void PrintOrderSummaries(
+            List<OrderSummaryView> orders
+    ) {
 
-    private void ShowAllOrders() {
-
-        System.out.println();
-        System.out.println("========================================");
-        System.out.println("             전체 주문 조회");
-        System.out.println("========================================");
-
-        // TODO:
-        // OrderQueryService 전체 주문 조회 기능 연결
         System.out.println(
-                "[TODO] 전체 주문 조회 기능 연결 예정"
+                "조회된 주문 개수: " + orders.size()
         );
-    }
 
-
-    // ============================================================
-    // 2. 주문 상태별 조회
-    // ============================================================
-
-    private void ShowOrdersByStatus() {
-
-        System.out.println();
-        System.out.println("========================================");
-        System.out.println("           주문 상태별 조회");
-        System.out.println("========================================");
-
-        System.out.println("1. 주문 완료 (CONFIRMED)");
-        System.out.println("2. 반품 완료 (RETURNED)");
-        System.out.println("0. 이전");
-        System.out.println("----------------------------------------");
-        System.out.print("선택 > ");
-
-        String input =
-                scanner.nextLine().trim();
-
-
-        String status;
-
-        switch (input) {
-
-            case "1":
-                status = "CONFIRMED";
-                break;
-
-            case "2":
-                status = "RETURNED";
-                break;
-
-            case "0":
-                return;
-
-            default:
-
-                System.out.println(
-                        "올바른 상태를 선택해 주세요."
-                );
-
-                return;
-        }
-
-
-        // TODO:
-        // 나중에 OrderQueryService 연결
         System.out.println(
-                "[TODO] 상태 조회: " + status
-        );
-    }
-
-
-    // ============================================================
-    // 3. 기간별 조회
-    // ============================================================
-
-    private void ShowOrdersByDate() {
-
-        System.out.println();
-        System.out.println("========================================");
-        System.out.println("             기간별 주문 조회");
-        System.out.println("========================================");
-
-        System.out.print(
-                "시작 날짜 (YYYY-MM-DD) > "
+                "------------------------------------------------------------"
         );
 
-        String startDate =
-                scanner.nextLine().trim();
+        for (OrderSummaryView order : orders) {
 
+            String orderedAt =
+                    order.getOrderedAt() == null
+                            ? "-"
+                            : order.getOrderedAt()
+                            .format(dateTimeFormatter);
 
-        System.out.print(
-                "종료 날짜 (YYYY-MM-DD) > "
-        );
-
-        String endDate =
-                scanner.nextLine().trim();
-
-
-        // TODO:
-        // OrderQueryService 기간 조회 연결
-        System.out.println(
-                "[TODO] "
-                        + startDate
-                        + " ~ "
-                        + endDate
-                        + " 주문 조회"
-        );
-    }
-
-
-    // ============================================================
-    // 4. 회원 / 비회원 주문 조회
-    // ============================================================
-
-    private void ShowOrdersByCustomerType() {
-
-        System.out.println();
-        System.out.println("========================================");
-        System.out.println("          회원 / 비회원 주문 조회");
-        System.out.println("========================================");
-
-        System.out.println("1. 회원 주문");
-        System.out.println("2. 비회원 주문");
-        System.out.println("0. 이전");
-        System.out.println("----------------------------------------");
-        System.out.print("선택 > ");
-
-
-        String input =
-                scanner.nextLine().trim();
-
-
-        switch (input) {
-
-            case "1":
-
-                // customer_id IS NOT NULL
-                System.out.println(
-                        "[TODO] 회원 주문 조회"
-                );
-
-                break;
-
-
-            case "2":
-
-                // customer_id IS NULL
-                System.out.println(
-                        "[TODO] 비회원 주문 조회"
-                );
-
-                break;
-
-
-            case "0":
-
-                return;
-
-
-            default:
-
-                System.out.println(
-                        "올바른 메뉴 번호를 입력해 주세요."
-                );
-        }
-    }
-
-
-    // ============================================================
-    // 5. 주문 상세 조회
-    // ============================================================
-
-    private void ShowOrderDetail() {
-
-        System.out.println();
-        System.out.println("========================================");
-        System.out.println("             주문 상세 조회");
-        System.out.println("========================================");
-
-        System.out.print(
-                "주문 번호(order_no) > "
-        );
-
-
-        String orderNo =
-                scanner.nextLine().trim();
-
-
-        if (orderNo.isBlank()) {
+            String status =
+                    order.getStatus() == null
+                            ? "-"
+                            : order.getStatus()
+                            .GetDisplayName();
 
             System.out.println(
-                    "주문 번호를 입력해 주세요."
+                    "주문 ID       : " + order.getOrderId()
             );
 
-            return;
+            System.out.println(
+                    "주문번호      : " + order.getOrderNo()
+            );
+
+            System.out.println(
+                    "주문일시      : " + orderedAt
+            );
+
+            System.out.println(
+                    "상태          : " + status
+            );
+
+            System.out.println(
+                    "상품 종류     : "
+                            + order.getItemCount()
+            );
+
+            System.out.println(
+                    "전체 수량     : "
+                            + order.getTotalQuantity()
+            );
+
+            System.out.println(
+                    "총금액        : "
+                            + FormatMoney(
+                            order.getTotalAmount()
+                    )
+                            + "원"
+            );
+
+            System.out.println(
+                    "------------------------------------------------------------"
+            );
         }
-
-
-        // TODO:
-        // OrderQueryService 상세 조회 연결
-        System.out.println(
-                "[TODO] 주문 상세 조회: "
-                        + orderNo
-        );
     }
 
+    // =====================================================
+    // 주문 상세 출력
+    // =====================================================
 
-    // ============================================================
-    // 6. 관리자 반품 처리
-    // ============================================================
+    private void PrintOrderDetail(
+            OrderDetailView order
+    ) {
 
-    private void ReturnOrder() {
+        String orderedAt =
+                order.getOrderedAt() == null
+                        ? "-"
+                        : order.getOrderedAt()
+                        .format(dateTimeFormatter);
+
+        String returnedAt =
+                order.getReturnedAt() == null
+                        ? "-"
+                        : order.getReturnedAt()
+                        .format(dateTimeFormatter);
+
+        String status =
+                order.getStatus() == null
+                        ? "-"
+                        : order.getStatus()
+                        .GetDisplayName();
 
         System.out.println();
         System.out.println("========================================");
-        System.out.println("              주문 반품");
+        System.out.println("              주문 상세");
         System.out.println("========================================");
-
-        System.out.print(
-                "반품할 주문 번호(order_no) > "
-        );
-
-
-        String orderNo =
-                scanner.nextLine().trim();
-
-
-        if (orderNo.isBlank()) {
-
-            System.out.println(
-                    "주문 번호를 입력해 주세요."
-            );
-
-            return;
-        }
-
-
-        System.out.print(
-                "정말 전체 반품하시겠습니까? (Y/N) > "
-        );
-
-
-        String confirm =
-                scanner.nextLine()
-                        .trim()
-                        .toUpperCase();
-
-
-        if (!confirm.equals("Y")) {
-
-            System.out.println(
-                    "반품 처리를 취소했습니다."
-            );
-
-            return;
-        }
-
-
-        /*
-         * TODO:
-         *
-         * 형준님의 OrderCommandService가 완성되면
-         * 여기만 실제 반품 Service 호출로 변경
-         *
-         * 예:
-         *
-         * boolean result =
-         *      orderCommandService.ReturnOrder(orderNo, ...);
-         *
-         * 반품 Service 내부에서:
-         *
-         * 1. CONFIRMED 주문인지 확인
-         * 2. orders.status → RETURNED
-         * 3. returned_at 기록
-         * 4. 일반 상품 재고 복구
-         * 5. 시리얼 AVAILABLE 복구
-         * 6. order_item_unit.returned_at 기록
-         * 7. 모두 성공 → commit
-         * 8. 하나라도 실패 → rollback
-         */
 
         System.out.println(
-                "[TODO] 반품 Service 연결 예정"
+                "주문번호      : " + order.getOrderNo()
         );
-    }
 
+        System.out.println(
+                "주문일시      : " + orderedAt
+        );
 
-    // ============================================================
-    // 화면 출력
-    // ============================================================
+        System.out.println(
+                "주문상태      : " + status
+        );
 
-    private void PrintAdminMenu() {
-
-        System.out.println();
-        System.out.println("========================================");
-        System.out.println("           주문 / 반품 관리");
-        System.out.println("========================================");
-
-        System.out.println("1. 전체 주문 조회");
-        System.out.println("2. 주문 상태별 조회");
-        System.out.println("3. 기간별 주문 조회");
-        System.out.println("4. 회원 / 비회원 주문 조회");
-        System.out.println("5. 주문 상세 조회");
-        System.out.println("6. 주문 반품");
-        System.out.println("0. 이전");
+        System.out.println(
+                "반품일시      : " + returnedAt
+        );
 
         System.out.println("----------------------------------------");
-        System.out.print("선택 > ");
+
+        if (order.getItems() == null ||
+                order.getItems().isEmpty()) {
+
+            System.out.println(
+                    "주문 상품이 없습니다."
+            );
+
+        } else {
+
+            for (OrderItemDetailView item :
+                    order.getItems()) {
+
+                PrintOrderItem(item);
+            }
+        }
+
+        System.out.println(
+                "상품 종류     : " + order.getItemCount()
+        );
+
+        System.out.println(
+                "전체 수량     : "
+                        + order.getTotalQuantity()
+        );
+
+        System.out.println(
+                "총금액        : "
+                        + FormatMoney(
+                        order.getTotalAmount()
+                )
+                        + "원"
+        );
+
+        System.out.println("========================================");
     }
+
+
+    /**
+     * 주문 상품 한 줄 출력
+     */
+    private void PrintOrderItem(
+            OrderItemDetailView item
+    ) {
+
+        System.out.println(
+                "상품코드      : " + item.getProductCode()
+        );
+
+        System.out.println(
+                "상품명        : " + item.getProductName()
+        );
+
+        System.out.println(
+                "단가          : "
+                        + FormatMoney(
+                        item.getUnitPrice()
+                )
+                        + "원"
+        );
+
+        System.out.println(
+                "수량          : " + item.getQuantity()
+        );
+
+        System.out.println(
+                "소계          : "
+                        + FormatMoney(
+                        item.getSubtotal()
+                )
+                        + "원"
+        );
+
+        System.out.println(
+                "----------------------------------------"
+        );
+    }
+
+    // =====================================================
+    // 금액 출력
+    // =====================================================
+
+    private String FormatMoney(
+            BigDecimal amount
+    ) {
+
+        if (amount == null) {
+            return "0";
+        }
+
+        NumberFormat numberFormat =
+                NumberFormat.getNumberInstance(
+                        Locale.KOREA
+                );
+
+        return numberFormat.format(amount);
+    }
+
 }

@@ -1,6 +1,7 @@
 package com.team.orderapp.app;
 
 import com.team.orderapp.auth.SignupMenu;
+import com.team.orderapp.order.query.OrderQueryMenu;
 import com.team.orderapp.product.ProductMenu;
 
 import java.util.Scanner;
@@ -14,10 +15,15 @@ import java.util.Scanner;
 public class GuestMenu {
 
     private final Scanner scanner;
+
     private final ProductMenu productMenu;
+
+    private final OrderQueryMenu orderQueryMenu;
+
     public GuestMenu(Scanner scanner) {
         this.scanner = scanner;
         this.productMenu = new ProductMenu(scanner);
+        this.orderQueryMenu = new OrderQueryMenu(scanner);
     }
 
 
@@ -56,6 +62,7 @@ public class GuestMenu {
 
                 case "4":
                     // TODO: 비회원 주문 조회 메뉴 연결
+                    orderQueryMenu.ShowGuestOrder();
                     System.out.println("[TODO] 비회원 주문 조회");
                     break;
 
