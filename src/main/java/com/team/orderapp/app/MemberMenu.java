@@ -1,6 +1,8 @@
 package com.team.orderapp.app;
 
 import com.team.orderapp.customer.MyInfoMenu;
+import com.team.orderapp.order.query.OrderQueryMenu;
+import com.team.orderapp.product.ProductMenu;
 
 import java.util.Scanner;
 
@@ -14,7 +16,9 @@ public class MemberMenu {
     // 로그인한 회원 이메일
     private final String email;
 
+    private final ProductMenu productMenu;
 
+    private final OrderQueryMenu orderQueryMenu;
     public MemberMenu(
             Scanner scanner,
             String email
@@ -22,6 +26,8 @@ public class MemberMenu {
 
         this.scanner = scanner;
         this.email = email;
+        this.productMenu = new ProductMenu(scanner);
+        this.orderQueryMenu = new OrderQueryMenu(scanner);
     }
 
 
@@ -41,11 +47,13 @@ public class MemberMenu {
 
                 case "1":
                     // TODO: 상품 전체 조회 연결
+                    productMenu.ShowAllProducts();
                     System.out.println("[TODO] 상품 전체 조회");
                     break;
 
                 case "2":
                     // TODO: 상품 조건 조회 연결
+                    productMenu.ShowProductsByCondition();
                     System.out.println("[TODO] 상품 조건 조회");
                     break;
 
@@ -56,6 +64,7 @@ public class MemberMenu {
 
                 case "4":
                     // TODO: 로그인한 회원의 주문 목록 / 상세 조회 연결
+//                    orderQueryMenu.ShowMyOrders(); <- 여기는 파라미터로 customer
                     System.out.println("[TODO] 내 주문 목록 / 상세");
                     break;
 
