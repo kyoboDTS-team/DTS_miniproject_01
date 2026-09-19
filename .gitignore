@@ -42,3 +42,6 @@ config/db.properties
 .claude/
 CLAUDE.md
 AGENTS.md
+
+# 개인 테스트용 실행 파일
+src/main/java/com/team/orderapp/cart/CartMenuTest.java
