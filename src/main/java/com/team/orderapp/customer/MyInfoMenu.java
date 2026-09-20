@@ -1,5 +1,7 @@
 package com.team.orderapp.customer;
 
+import com.team.orderapp.order.query.OrderSummaryView;
+
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
@@ -21,7 +23,7 @@ public class MyInfoMenu {
     private static final int NAME_MAX_LENGTH = 50;
 
     private final Scanner scanner;
-    private final String email;
+    private String email;
     private final CustomerService customerService;
 
     /**
@@ -34,23 +36,34 @@ public class MyInfoMenu {
     }
 
     /**
-     * 내 정보를 조회하고, 메뉴에서 고른 항목을 수정합니다.
+     * 현재(최신) 이메일을 돌려줍니다. Run() 도중 이메일을 변경했다면 그 새 값이에요.
+     * MemberMenu가 자기 화면에 표시할 이메일을 갱신할 때 사용합니다.
      */
-    public void Run() {
+    public String GetEmail() {
+        return email;
+    }
+
+    /**
+     * 내 정보를 조회하고, 메뉴에서 고른 항목을 수정합니다.
+     *
+     * @return 계속 로그인 상태를 유지해도 되면 true, 회원 탈퇴로 계정이 사라져서
+     * 상위 화면(MemberMenu)이 로그아웃 처리를 해야 하면 false
+     */
+    public boolean Run() {
         Optional<Customer> found;
         try {
             found = customerService.FindByEmail(email);
         } catch (IllegalStateException e) {
             System.out.println(DB_ERROR_MESSAGE);
-            return;
+            return true;
         } catch (Exception e) {
             System.out.println(COMMUNICATION_ERROR_MESSAGE);
-            return;
+            return true;
         }
 
         if (found.isEmpty()) {
             System.out.println("내 정보를 찾을 수 없습니다.");
-            return;
+            return true;
         }
 
         Customer customer = found.get();
@@ -64,6 +77,7 @@ public class MyInfoMenu {
             System.out.println("2. 전화번호 변경");
             System.out.println("3. 이메일(ID) 변경");
             System.out.println("4. 비밀번호 변경");
+            System.out.println("5. 회원 탈퇴");
             System.out.println("0. 뒤로가기");
             System.out.print("번호를 입력하세요: ");
 
@@ -73,10 +87,15 @@ public class MyInfoMenu {
                 case "2" -> UpdatePhone(customer);
                 case "3" -> UpdateEmail(customer);
                 case "4" -> UpdatePassword(customer);
-                case "0" -> {
-                    return;
+                case "5" -> {
+                    if (Withdraw(customer)) {
+                        return false;
+                    }
                 }
-                default -> System.out.println("잘못된 번호입니다.");
+                case "0" -> {
+                    return true;
+                }
+                default -> PrintInvalidChoiceMessage(choice);
             }
         }
     }
@@ -90,6 +109,18 @@ public class MyInfoMenu {
             return true;
         }
         return false;
+    }
+
+    /**
+     * 메뉴 선택이 잘못됐을 때, 숫자가 아니면 "숫자를 입력해 주세요.", 숫자인데 없는 번호면
+     * "올바른 메뉴 번호를 입력해 주세요."로 구분해서 안내합니다.
+     */
+    private void PrintInvalidChoiceMessage(String choice) {
+        if (choice.matches("\\d+")) {
+            System.out.println("올바른 메뉴 번호를 입력해 주세요.");
+        } else {
+            System.out.println("숫자를 입력해 주세요.");
+        }
     }
 
     /**
@@ -130,7 +161,7 @@ public class MyInfoMenu {
 
         try {
             boolean updated = customerService.Update(customer);
-            System.out.println(updated ? "이름이 변경되었습니다." : "이름 변경에 실패했습니다.");
+            System.out.println(updated ? "이름이 \"" + customer.getCustomerName() + "\"(으)로 변경되었습니다." : "이름 변경에 실패했습니다.");
         } catch (IllegalStateException e) {
             System.out.println(DB_ERROR_MESSAGE);
         } catch (Exception e) {
@@ -178,7 +209,7 @@ public class MyInfoMenu {
 
         try {
             boolean updated = customerService.Update(customer);
-            System.out.println(updated ? "전화번호가 변경되었습니다." : "전화번호 변경에 실패했습니다.");
+            System.out.println(updated ? "전화번호가 \"" + customer.getPhone() + "\"(으)로 변경되었습니다." : "전화번호 변경에 실패했습니다.");
         } catch (IllegalStateException e) {
             System.out.println(DB_ERROR_MESSAGE);
         } catch (Exception e) {
@@ -215,7 +246,8 @@ public class MyInfoMenu {
                 boolean updated = customerService.UpdateEmail(customer, newEmail);
                 if (updated) {
                     customer.setEmail(newEmail);
-                    System.out.println("이메일(ID)이 수정되었습니다. 다음 로그인부터는 새 이메일로 로그인해주세요.");
+                    this.email = newEmail;
+                    System.out.println("이메일(ID)이 \"" + newEmail + "\"(으)로 수정되었습니다. 다음 로그인부터는 새 이메일로 로그인해주세요.");
                 } else {
                     System.out.println("이메일 수정에 실패했습니다.");
                 }
@@ -308,12 +340,96 @@ public class MyInfoMenu {
     }
 
     /**
+     * 회원 탈퇴를 처리합니다. 주문 이력이 있으면 탈퇴할 수 없고, 본인 확인을 위해 현재 비밀번호를 먼저 확인합니다.
+     *
+     * @return 실제로 탈퇴되었으면 true
+     */
+    private boolean Withdraw(Customer customer) {
+        List<OrderSummaryView> orders;
+        try {
+            orders = customerService.FindOrderHistory(customer.getCustomerId());
+        } catch (IllegalStateException e) {
+            System.out.println(DB_ERROR_MESSAGE);
+            return false;
+        } catch (Exception e) {
+            System.out.println(COMMUNICATION_ERROR_MESSAGE);
+            return false;
+        }
+
+        if (!orders.isEmpty()) {
+            System.out.println("\n주문 이력이 " + orders.size() + "건 있어서 탈퇴할 수 없습니다.");
+            return false;
+        }
+
+        String password;
+        while (true) {
+            System.out.print("\n본인 확인을 위해 현재 비밀번호를 입력하세요 (0: 취소): ");
+            password = scanner.nextLine();
+            if (IsCancelled(password.trim())) {
+                return false;
+            }
+            if (password.isEmpty()) {
+                System.out.println("비밀번호를 입력해주세요.");
+                continue;
+            }
+            break;
+        }
+
+        boolean verified;
+        try {
+            verified = customerService.VerifyPassword(customer, password);
+        } catch (IllegalStateException e) {
+            System.out.println(DB_ERROR_MESSAGE);
+            return false;
+        } catch (Exception e) {
+            System.out.println(COMMUNICATION_ERROR_MESSAGE);
+            return false;
+        }
+        if (!verified) {
+            System.out.println("비밀번호가 일치하지 않습니다.");
+            return false;
+        }
+
+        System.out.print("\n정말 탈퇴하시겠습니까? 이 작업은 되돌릴 수 없습니다. (y: 탈퇴, 0 또는 그 외: 취소): ");
+        String confirm = scanner.nextLine().trim();
+        if (!"y".equalsIgnoreCase(confirm)) {
+            System.out.println("취소했습니다.");
+            return false;
+        }
+
+        try {
+            boolean deleted = customerService.DeleteById(customer);
+            if (!deleted) {
+                System.out.println("탈퇴에 실패했습니다.");
+                return false;
+            }
+        } catch (IllegalStateException e) {
+            System.out.println(DB_ERROR_MESSAGE);
+            return false;
+        } catch (Exception e) {
+            System.out.println(COMMUNICATION_ERROR_MESSAGE);
+            return false;
+        }
+
+        System.out.println("\n=== 회원 탈퇴 완료 ===");
+        System.out.println("회원 탈퇴가 완료되었습니다.");
+        System.out.print("\n0을 입력하면 비회원 메뉴로 이동: ");
+        while (!CANCEL_INPUT.equals(scanner.nextLine().trim())) {
+            System.out.print("0을 입력하면 비회원 메뉴로 이동: ");
+        }
+        return true;
+    }
+
+    /**
      * 비밀번호 규칙(8~20자, 대문자/소문자/숫자/특수문자 각 1개 이상, 공백 불가)을 하나씩 확인해서,
      * 빠진 조건마다 각각 다른 안내 문구를 돌려줍니다. 전부 통과하면 빈 목록을 돌려줍니다.
      */
     private List<String> ValidatePassword(String password) {
         List<String> problems = new ArrayList<>();
 
+        if (!password.matches("[\\x21-\\x7E]*")) {
+            problems.add("한글이나 이모지 등은 사용할 수 없습니다. 영문/숫자/특수문자(ASCII)만 입력해주세요.");
+        }
         if (password.length() < 8) {
             problems.add("비밀번호가 너무 짧습니다. (8자 이상)");
         }

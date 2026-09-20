@@ -172,6 +172,17 @@ public class SignupMenu {
             break;
         }
 
+        System.out.println("\n=== 입력하신 정보 확인 ===");
+        System.out.println("이메일   : " + email);
+        System.out.println("이름     : " + customerName);
+        System.out.println("전화번호 : " + phone);
+        System.out.print("\n이 정보로 가입하시겠습니까? (y: 가입, 0 또는 그 외 입력: 취소): ");
+        String finalConfirm = scanner.nextLine().trim();
+        if (!"y".equalsIgnoreCase(finalConfirm)) {
+            System.out.println("취소했습니다.");
+            return;
+        }
+
         boolean signedUp;
         try {
             signedUp = new AuthService().SignUp(email, password, customerName, phone);
@@ -213,6 +224,9 @@ public class SignupMenu {
     private List<String> ValidatePassword(String password) {
         List<String> problems = new ArrayList<>();
 
+        if (!password.matches("[\\x21-\\x7E]*")) {
+            problems.add("한글이나 이모지 등은 사용할 수 없습니다. 영문/숫자/특수문자(ASCII)만 입력해주세요.");
+        }
         if (password.length() < 8) {
             problems.add("비밀번호가 너무 짧습니다. (8자 이상)");
         }
