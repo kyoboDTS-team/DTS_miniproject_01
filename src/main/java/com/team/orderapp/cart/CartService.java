@@ -225,6 +225,34 @@ public class CartService {
     }
 
 
+    /**
+     * 현재 장바구니를 통째로 버리고 장바구니 번호를 비웁니다.
+     * 로그인·로그아웃처럼 사용자가 바뀔 때 호출합니다(비회원이 담아 둔 장바구니가
+     * 다음 사용자에게 보이면 안 되기 때문입니다).
+     *
+     * cart 행을 지우면 cart_item은 ON DELETE CASCADE로 함께 지워집니다.
+     * 담아 둔 장바구니가 없으면 아무것도 하지 않습니다.
+     */
+    public void ResetCart() {
+
+        if (currentCartId == null) {
+            return;
+        }
+
+        try (SqlSession session = OpenSession()) {
+
+            session.getMapper(CartDao.class)
+                    .DeleteCart(currentCartId);
+
+            session.commit();
+        }
+
+        // DB 삭제가 끝난 뒤에 메모리 상태를 비운다.
+        // try 안에서 비우면 예외가 났을 때 DB에는 남고 프로그램만 잊는 상태가 된다.
+        currentCartId = null;
+    }
+
+
     // ============================================================
     // 공통 Helper
     // ============================================================

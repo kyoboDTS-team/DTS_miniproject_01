@@ -10,9 +10,9 @@ import org.apache.ibatis.annotations.Update;
 import java.util.List;
 
 /**
- * 주문 생성 및 변경(CUD) 명령 처리를 위한 데이터베이스 접근 객체(DAO) 클래스입니다.
+ * 주문 생성 및 변경(CUD) 명령 처리를 위한 데이터베이스 접근 객체(DAO) 인터페이스입니다.
  */
-public class OrderCommandDao {
+public interface OrderCommandDao {
 
     /**
      * 신규 주문 마스터 레코드를 저장합니다.
@@ -22,10 +22,7 @@ public class OrderCommandDao {
      */
     @Insert("INSERT INTO orders (order_no, customer_id, status) VALUES (#{orderNo}, #{customerId}, #{status})")
     @Options(useGeneratedKeys = true, keyProperty = "orderId")
-    public Long InsertOrder(Order order) {
-        // TODO: INSERT INTO orders ... (생성된 PK 반환)
-        return null;
-    }
+    Long InsertOrder(Order order);
 
     /**
      * 단일 주문 상세 항목을 저장합니다.
@@ -34,10 +31,7 @@ public class OrderCommandDao {
      * @return 저장 성공 여부
      */
     @Insert("INSERT INTO order_item (order_id, product_id, quantity, unit_price) VALUES (#{orderId}, #{productId}, #{quantity}, #{unitPrice})")
-    public boolean InsertOrderItem(OrderItem item) {
-        // TODO: INSERT INTO order_item ...
-        return false;
-    }
+    boolean InsertOrderItem(OrderItem item);
 
     /**
      * 다건의 주문 상세 항목들을 일괄 저장합니다.
@@ -45,7 +39,7 @@ public class OrderCommandDao {
      * @param items 저장할 OrderItem 목록
      * @return 일괄 저장 성공 여부
      */
-    public boolean InsertOrderItems(List<OrderItem> items) {
+    default boolean InsertOrderItems(List<OrderItem> items) {
         if (items == null || items.isEmpty()) {
             return false;
         }
@@ -66,8 +60,5 @@ public class OrderCommandDao {
      * @return 상태 변경 성공 여부
      */
     @Update("UPDATE orders SET status = #{status} WHERE order_id = #{orderId}")
-    public boolean UpdateOrderStatus(@Param("orderId") Long orderId, @Param("status") String status) {
-        // TODO: UPDATE orders SET status = ? WHERE order_id = ?
-        return false;
-    }
+    boolean UpdateOrderStatus(@Param("orderId") Long orderId, @Param("status") String status);
 }
