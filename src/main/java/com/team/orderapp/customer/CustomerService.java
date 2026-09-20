@@ -4,6 +4,8 @@ import com.team.orderapp.auth.AppUser;
 import com.team.orderapp.auth.AppUserDao;
 import com.team.orderapp.auth.PasswordHasher;
 import com.team.orderapp.common.DbConnectionFactory;
+import com.team.orderapp.order.query.OrderQueryDao;
+import com.team.orderapp.order.query.OrderSummaryView;
 import org.apache.ibatis.session.SqlSession;
 
 import java.util.List;
@@ -222,6 +224,35 @@ public class CustomerService {
             boolean updated = appUserDao.UpdateEmail(customer.getUserId(), newEmail);
             session.commit();
             return updated;
+        }
+    }
+
+    /**
+     * 회원 계정의 활성 상태를 바꿉니다. 관리자가 로그인 계정을 잠그거나(비활성화) 풀 때(활성화) 사용합니다.
+     *
+     * @param customer 대상 고객 (userId가 설정되어 있어야 함)
+     * @param isActive 새 활성 상태
+     * @return 수정 성공 여부
+     */
+    public boolean UpdateActiveStatus(Customer customer, boolean isActive) {
+        try (SqlSession session = OpenSessionOrThrow()) {
+            AppUserDao appUserDao = session.getMapper(AppUserDao.class);
+            boolean updated = appUserDao.UpdateActiveStatus(customer.getUserId(), isActive);
+            session.commit();
+            return updated;
+        }
+    }
+
+    /**
+     * 이 고객의 주문 이력을 조회합니다. 삭제 전에 주문 이력이 있는지 미리 확인할 때 사용합니다.
+     *
+     * @param customerId 조회할 고객 ID
+     * @return 주문 요약 목록 (주문 이력이 없으면 빈 목록)
+     */
+    public List<OrderSummaryView> FindOrderHistory(Long customerId) {
+        try (SqlSession session = OpenSessionOrThrow()) {
+            OrderQueryDao orderQueryDao = session.getMapper(OrderQueryDao.class);
+            return orderQueryDao.FindSummariesByCustomerId(customerId);
         }
     }
 

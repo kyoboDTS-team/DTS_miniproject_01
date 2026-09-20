@@ -23,4 +23,10 @@ public class Customer {
      * CustomerDao에서 app_user와 조인해서 조회할 때만 값이 채워집니다(Insert/Update 대상 아님).
      */
     private String email;
+
+    /**
+     * app_user 테이블의 계정 활성 상태입니다. email과 마찬가지로 customer 테이블 자체에는 없는 값이라,
+     * CustomerDao에서 app_user와 조인해서 조회할 때만 값이 채워집니다(Insert/Update 대상 아님).
+     */
+    private Boolean isActive;
 }
