@@ -108,6 +108,84 @@ public class OrderCommandService {
 
 
     /**
+     * 주문을 반품합니다. 주문 전체가 한 번에 반품되며, 부분 반품은 지원하지 않습니다.
+     *
+     * 상태 변경은 조건부 UPDATE(OrderCommandDao.ReturnOrder)로 합니다. 조회해서 확인한 뒤
+     * 바꾸는 방식이 아니라 WHERE에 status = 'CONFIRMED' 조건을 넣어, 바뀐 행이 0이면
+     * 이미 반품된 주문으로 보고 거절합니다.
+     *
+     * @param orderNo    반품할 주문번호
+     * @param customerId 요청자의 고객 번호. 비회원이면 null
+     * @param isAdmin    관리자면 true (다른 사람의 주문도 반품할 수 있음)
+     * @throws IllegalArgumentException 주문이 없거나, 남의 주문이거나, 이미 반품된 경우
+     * @throws IllegalStateException    DB 연결에 실패하거나 재고 복구에 실패한 경우
+     */
+    public void ReturnOrder(String orderNo, Long customerId, boolean isAdmin) {
+
+        if (orderNo == null || orderNo.isBlank()) {
+            throw new IllegalArgumentException("주문번호를 입력해 주세요.");
+        }
+
+        String normalizedOrderNo = orderNo.trim().toUpperCase();
+
+        try (SqlSession session = OpenSession()) {
+
+            OrderCommandDao orderDao = session.getMapper(OrderCommandDao.class);
+            ProductDao productDao = session.getMapper(ProductDao.class);
+
+            Order order = orderDao.FindByOrderNo(normalizedOrderNo)
+                    .orElseThrow(() -> new IllegalArgumentException("주문을 찾을 수 없습니다."));
+
+            CheckReturnPermission(order, customerId, isAdmin);
+
+            // 이미 반품된 주문이면 바뀐 행이 0이다. 조회와 변경 사이에 끼어드는 중복 반품을 DB가 막아 준다.
+            if (orderDao.ReturnOrder(order.getOrderId()) == 0) {
+                throw new IllegalArgumentException("이미 반품된 주문입니다.");
+            }
+
+            for (OrderItem item : orderDao.FindItemsByOrderId(order.getOrderId())) {
+
+                // 주문 때 차감한 수량을 그대로 되돌린다. 같은 조건부 UPDATE에 양수를 넘기면 된다.
+                boolean stockRestored = productDao.UpdateStock(
+                        item.getProductId(), item.getQuantity()
+                );
+
+                if (!stockRestored) {
+                    throw new IllegalStateException("재고 복구에 실패했습니다. 관리자에게 문의해 주세요.");
+                }
+
+                // TODO: 시리얼 복구(SOLD → AVAILABLE, order_item_unit.returned_at 기록)
+                //       — 쿼리 위치 결정 후 추가 (2026-09-21 회의)
+            }
+
+            session.commit();
+        }
+    }
+
+
+    /**
+     * 반품 권한을 확인하는 헬퍼 메서드입니다.
+     *
+     * 관리자는 모든 주문을, 회원은 자기 주문만 반품할 수 있습니다.
+     * 비회원 주문(customer_id가 null)은 주문번호를 아는 사람만 반품할 수 있다고 보고 통과시킵니다.
+     */
+    private void CheckReturnPermission(Order order, Long customerId, boolean isAdmin) {
+
+        if (isAdmin) {
+            return;
+        }
+
+        if (order.getCustomerId() == null) {
+            return;
+        }
+
+        if (!order.getCustomerId().equals(customerId)) {
+            throw new IllegalArgumentException("본인의 주문만 반품할 수 있습니다.");
+        }
+    }
+
+
+    /**
      * 주문할 상품을 DB에서 다시 조회하고, 판매 중인지 확인하는 헬퍼 메서드입니다.
      */
     private Product FindSellingProduct(ProductDao productDao, Long productId) {
