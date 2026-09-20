@@ -1,5 +1,8 @@
 package com.team.orderapp.cart;
 
+import com.team.orderapp.auth.LoginSession;
+import com.team.orderapp.order.command.OrderCommandService;
+
 import java.math.BigDecimal;
 import java.text.NumberFormat;
 import java.util.List;
@@ -193,10 +196,36 @@ public class CartMenu {
     // ============================================================
 
     /**
-     * 장바구니 구매를 처리합니다. 주문 생성 기능(OrderCommandService)이 완성되면 연결합니다.
+     * 장바구니에 담긴 상품을 주문합니다.
+     *
+     * 실제 결제 금액은 주문 시점에 상품을 다시 조회해 계산하므로, 화면에 보여 준 합계와
+     * 다를 수 있습니다(담은 뒤 가격이 바뀐 경우). 재고 부족·판매 중지 같은 실패는
+     * 예외로 올라와 Run()의 PrintError가 처리하며, 이때 장바구니는 그대로 남습니다.
+     *
+     * 주문에 성공하면 OrderCommandService가 장바구니를 비웁니다.
      */
     private void Purchase() {
-        System.out.println("구매 기능은 주문 기능 완성 후 제공됩니다.");
+
+        List<CartItem> items = cartService.GetItems();
+
+        String total = FormatMoney(cartService.CalculateTotalAmount(items)) + "원";
+
+        if (!ReadYesNo("총 " + total + "을 결제합니다. 주문하시겠습니까? (Y/N) > ")) {
+            System.out.println("취소했습니다.");
+            return;
+        }
+
+        // 회원이면 customerId가, 비회원이면 null이 넘어가 주문 종류가 갈린다.
+        String orderNo = new OrderCommandService()
+                .Checkout(LoginSession.getCustomerId());
+
+        System.out.println();
+        System.out.println("주문이 완료되었습니다.");
+        System.out.println("주문번호: " + orderNo);
+
+        if (!LoginSession.IsLoggedIn()) {
+            System.out.println("비회원 주문은 주문번호로만 조회·반품할 수 있으니 꼭 기록해 주세요.");
+        }
     }
 
 
