@@ -1,5 +1,7 @@
 package com.team.orderapp.customer;
 
+import com.team.orderapp.order.query.OrderSummaryView;
+
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
@@ -51,6 +53,7 @@ public class CustomerMenu {
             System.out.println("2. 상세 조회");
             System.out.println("3. 회원 정보 수정");
             System.out.println("4. 회원 삭제");
+            System.out.println("5. 회원 비활성화");
             System.out.println("0. 뒤로가기");
             System.out.print("번호를 입력하세요: ");
 
@@ -61,10 +64,11 @@ public class CustomerMenu {
                     case "2" -> DisplayByIdMenu();
                     case "3" -> UpdateInfo();
                     case "4" -> Delete();
+                    case "5" -> Deactivate();
                     case "0" -> {
                         return;
                     }
-                    default -> System.out.println("잘못된 번호입니다.");
+                    default -> PrintInvalidChoiceMessage(choice);
                 }
             } catch (ReturnToMainMenu e) {
                 // 어느 화면에서 "p"를 눌렀든, 여기로 와서 회원 관리 메뉴를 다시 보여줍니다.
@@ -93,6 +97,18 @@ public class CustomerMenu {
     }
 
     /**
+     * 메뉴 선택이 잘못됐을 때, 숫자가 아니면 "숫자를 입력해 주세요.", 숫자인데 없는 번호면
+     * "올바른 메뉴 번호를 입력해 주세요."로 구분해서 안내합니다.
+     */
+    private void PrintInvalidChoiceMessage(String choice) {
+        if (choice.matches("\\d+")) {
+            System.out.println("올바른 메뉴 번호를 입력해 주세요.");
+        } else {
+            System.out.println("숫자를 입력해 주세요.");
+        }
+    }
+
+    /**
      * 결과를 확인할 시간을 주기 위해, "0"을 입력할 때까지 화면에 머무릅니다.
      * "p"를 입력하면 회원 관리 메뉴로 바로 돌아갑니다.
      */
@@ -114,18 +130,17 @@ public class CustomerMenu {
             System.out.println("\n=== 전체 회원 조회 ===");
             System.out.println("1. 리스트로 보기");
             System.out.println("2. 회원 검색하기");
-            System.out.println("0. 뒤로가기 (p: 회원 관리 메뉴로 이동)");
+            System.out.println("0. 뒤로가기");
             System.out.print("번호를 입력하세요: ");
 
             String choice = scanner.nextLine().trim();
-            CheckMainMenuShortcut(choice);
             switch (choice) {
                 case "1" -> DisplayAllPaged();
                 case "2" -> SearchCustomers();
                 case "0" -> {
                     return;
                 }
-                default -> System.out.println("잘못된 번호입니다.");
+                default -> PrintInvalidChoiceMessage(choice);
             }
         }
     }
@@ -168,7 +183,7 @@ public class CustomerMenu {
 
             System.out.println("\n=== 전체 회원 목록 (" + page + "/" + totalPages + " 페이지) ===");
             for (Customer customer : customers) {
-                System.out.println(customer.getCustomerId() + " | " + customer.getCustomerName() + " | " + customer.getEmail() + " | " + customer.getPhone());
+                System.out.println(FormatListLine(customer));
             }
 
             System.out.print("\nz: 이전 페이지   x: 다음 페이지   회원번호 입력: 상세조회   0: 뒤로가기   p: 회원 관리 메뉴로 이동: ");
@@ -208,18 +223,17 @@ public class CustomerMenu {
             System.out.println("\n=== 상세 조회 ===");
             System.out.println("1. 회원 이름 입력");
             System.out.println("2. 회원 검색");
-            System.out.println("0. 뒤로가기 (p: 회원 관리 메뉴로 이동)");
+            System.out.println("0. 뒤로가기");
             System.out.print("번호를 입력하세요: ");
 
             String choice = scanner.nextLine().trim();
-            CheckMainMenuShortcut(choice);
             switch (choice) {
                 case "1" -> SearchByName();
                 case "2" -> SearchCustomers();
                 case "0" -> {
                     return;
                 }
-                default -> System.out.println("잘못된 번호입니다.");
+                default -> PrintInvalidChoiceMessage(choice);
             }
         }
     }
@@ -262,78 +276,67 @@ public class CustomerMenu {
             return;
         }
 
-        System.out.println("\n=== 동명이인 " + results.size() + "명이 있습니다 ===");
-        for (Customer customer : results) {
-            System.out.println(customer.getCustomerId() + " | " + customer.getCustomerName()
-                    + " (뒷자리 " + LastFourDigits(customer.getPhone()) + ") | " + customer.getEmail() + " | " + customer.getPhone());
-        }
-
-        while (true) {
-            System.out.print("\n회원번호 입력: 상세조회   0: 뒤로가기   p: 회원 관리 메뉴로 이동: ");
-            String choice = scanner.nextLine().trim();
-            CheckMainMenuShortcut(choice);
-            if (IsCancelled(choice)) {
-                return;
-            }
-            try {
-                DisplayById(Long.parseLong(choice));
-                return;
-            } catch (NumberFormatException e) {
-                System.out.println("잘못된 입력입니다.");
-            }
+        Customer selected = SelectFromResults(results);
+        if (selected != null) {
+            DisplayById(selected.getCustomerId());
         }
     }
 
     /**
-     * 이름 또는 전화번호로 회원을 검색하여 결과를 보여줍니다.
+     * 이름 또는 이메일로 회원을 검색하여 결과를 보여줍니다. 일치하는 회원이 없으면 같은 화면에서 다시 검색할 수 있습니다.
      */
     private void SearchCustomers() {
-        System.out.print("검색할 이름 또는 전화번호를 입력하세요 (0: 취소, p: 회원 관리 메뉴로 이동): ");
-        String keyword = scanner.nextLine().trim();
-        CheckMainMenuShortcut(keyword);
-        if (IsCancelled(keyword)) {
-            return;
-        }
-        if (keyword.isEmpty()) {
-            System.out.println("검색어를 입력해주세요.");
-            return;
-        }
-
         List<Customer> results;
-        try {
-            results = customerService.SearchByNameOrPhone(keyword);
-        } catch (IllegalStateException e) {
-            System.out.println(DB_ERROR_MESSAGE);
-            return;
-        } catch (Exception e) {
-            System.out.println(COMMUNICATION_ERROR_MESSAGE);
-            return;
-        }
-
-        System.out.println("\n=== 검색 결과 (" + results.size() + "건) ===");
-        if (results.isEmpty()) {
-            System.out.println("일치하는 회원이 없습니다.");
-            WaitForBack();
-            return;
-        }
-        for (Customer customer : results) {
-            System.out.println(customer.getCustomerId() + " | " + customer.getCustomerName()
-                    + " (뒷자리 " + LastFourDigits(customer.getPhone()) + ") | " + customer.getEmail() + " | " + customer.getPhone());
-        }
-
         while (true) {
-            System.out.print("\n회원번호 입력: 상세조회   0: 뒤로가기   p: 회원 관리 메뉴로 이동: ");
-            String choice = scanner.nextLine().trim();
-            CheckMainMenuShortcut(choice);
-            if (IsCancelled(choice)) {
+            System.out.print("검색할 이름 또는 이메일을 입력하세요 (0: 취소, p: 회원 관리 메뉴로 이동): ");
+            String keyword = scanner.nextLine().trim();
+            CheckMainMenuShortcut(keyword);
+            if (IsCancelled(keyword)) {
                 return;
             }
+            if (keyword.isEmpty()) {
+                System.out.println("검색어를 입력해주세요.");
+                continue;
+            }
+
             try {
-                DisplayById(Long.parseLong(choice));
+                results = customerService.SearchByNameOrEmail(keyword);
+            } catch (IllegalStateException e) {
+                System.out.println(DB_ERROR_MESSAGE);
                 return;
-            } catch (NumberFormatException e) {
+            } catch (Exception e) {
+                System.out.println(COMMUNICATION_ERROR_MESSAGE);
+                return;
+            }
+
+            if (results.isEmpty()) {
+                System.out.println("\n일치하는 회원이 없습니다. 다시 검색해주세요.");
+                continue;
+            }
+            break;
+        }
+
+        if (results.size() == 1) {
+            System.out.println("\n=== 검색 결과 1명 ===");
+            System.out.println(FormatSearchLine(results.get(0), false));
+            while (true) {
+                System.out.print("\n1: 상세조회   0: 뒤로가기   p: 회원 관리 메뉴로 이동: ");
+                String choice = scanner.nextLine().trim();
+                CheckMainMenuShortcut(choice);
+                if (IsCancelled(choice)) {
+                    return;
+                }
+                if ("1".equals(choice)) {
+                    DisplayById(results.get(0).getCustomerId());
+                    return;
+                }
                 System.out.println("잘못된 입력입니다.");
             }
+        }
+
+        Customer selected = SelectFromResults(results);
+        if (selected != null) {
+            DisplayById(selected.getCustomerId());
         }
     }
 
@@ -365,6 +368,125 @@ public class CustomerMenu {
     }
 
     /**
+     * 회원 목록에 쓰는 기본 한 줄 형식입니다 ("아이디 | 이름 | 이메일 | 전화번호 | 상태").
+     */
+    private String FormatBasicLine(Customer customer) {
+        return customer.getCustomerId() + " | " + customer.getCustomerName() + " | " + customer.getEmail()
+                + " | " + customer.getPhone() + " | " + FormatStatus(customer);
+    }
+
+    /**
+     * "전체 회원 조회 - 리스트로 보기"에 쓰는 형식입니다. 전화번호는 빼고 보여줍니다.
+     */
+    private String FormatListLine(Customer customer) {
+        return customer.getCustomerId() + " | " + customer.getCustomerName() + " | " + customer.getEmail()
+                + " | " + FormatStatus(customer);
+    }
+
+    /**
+     * 검색 결과 목록에 쓰는 형식입니다. 상세조회와 구분하기 위해 아이디/이름/이메일만 보여주고,
+     * 목록 안에 동명이인이 있을 때만 휴대폰 뒷자리를 이름 옆에 같이 보여줘서 구분할 수 있게 합니다.
+     */
+    private String FormatSearchLine(Customer customer, boolean showPhoneSuffix) {
+        String nameSuffix = showPhoneSuffix ? " (뒷자리 " + LastFourDigits(customer.getPhone()) + ")" : "";
+        return customer.getCustomerId() + " | " + customer.getCustomerName() + nameSuffix + " | " + customer.getEmail();
+    }
+
+    /**
+     * 목록 안에서 이 회원과 이름이 같은 다른 회원이 있는지 확인합니다. 동명이인 여부를 판단할 때 사용합니다.
+     */
+    private boolean HasDuplicateName(Customer customer, List<Customer> results) {
+        int count = 0;
+        for (Customer other : results) {
+            if (other.getCustomerName().equals(customer.getCustomerName())) {
+                count++;
+                if (count > 1) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * 상세 조회/삭제 확인 화면에 쓰는 형식입니다. 가입일까지 같이 보여줍니다.
+     */
+    private String FormatDetailLine(Customer customer) {
+        return customer.getCustomerId() + " | " + customer.getCustomerName() + " | " + customer.getEmail()
+                + " | " + customer.getPhone() + " | 가입일: " + customer.getCreatedAt().toLocalDate()
+                + " | " + FormatStatus(customer);
+    }
+
+    /**
+     * 계정 활성 상태를 "상태: 활성"/"상태: 비활성" 문자열로 바꿉니다.
+     */
+    private String FormatStatus(Customer customer) {
+        return "상태: " + (Boolean.TRUE.equals(customer.getIsActive()) ? "활성" : "비활성");
+    }
+
+    /**
+     * 여러 명(동명이인 등)의 검색 결과를 {@value #PAGE_SIZE}명씩 페이지로 나눠 보여주고,
+     * 회원번호를 입력받아 그중 한 명을 고르게 합니다.
+     *
+     * @param results 고를 대상 목록 (2명 이상)
+     * @return 고른 Customer, 취소했으면 null
+     */
+    private Customer SelectFromResults(List<Customer> results) {
+        int totalPages = (int) Math.ceil((double) results.size() / PAGE_SIZE);
+        int page = 1;
+
+        while (true) {
+            int fromIndex = (page - 1) * PAGE_SIZE;
+            int toIndex = Math.min(fromIndex + PAGE_SIZE, results.size());
+
+            System.out.println("\n=== 검색 결과 " + results.size() + "명 (" + page + "/" + totalPages + " 페이지) ===");
+            for (Customer customer : results.subList(fromIndex, toIndex)) {
+                System.out.println(FormatSearchLine(customer, HasDuplicateName(customer, results)));
+            }
+
+            if (totalPages > 1) {
+                System.out.print("\nz: 이전 페이지   x: 다음 페이지   회원번호 입력: 선택   0: 취소   p: 회원 관리 메뉴로 이동: ");
+            } else {
+                System.out.print("\n회원번호 입력: 선택   0: 취소   p: 회원 관리 메뉴로 이동: ");
+            }
+            String choice = scanner.nextLine().trim();
+            CheckMainMenuShortcut(choice);
+
+            if (totalPages > 1 && "x".equalsIgnoreCase(choice)) {
+                if (page < totalPages) {
+                    page++;
+                } else {
+                    System.out.println("마지막 페이지입니다.");
+                }
+                continue;
+            }
+            if (totalPages > 1 && "z".equalsIgnoreCase(choice)) {
+                if (page > 1) {
+                    page--;
+                } else {
+                    System.out.println("첫 페이지입니다.");
+                }
+                continue;
+            }
+            if (IsCancelled(choice)) {
+                return null;
+            }
+
+            try {
+                Long customerId = Long.parseLong(choice);
+                for (Customer customer : results) {
+                    if (customer.getCustomerId().equals(customerId)) {
+                        return customer;
+                    }
+                }
+                System.out.println("목록에 없는 번호입니다.");
+            } catch (NumberFormatException e) {
+                System.out.println("잘못된 입력입니다.");
+            }
+        }
+    }
+
+    /**
      * 이미 알고 있는 고객 번호로 바로 상세 정보를 조회합니다.
      * 목록/검색 화면에서 번호를 다시 물어보지 않고 바로 넘어올 때 사용합니다.
      */
@@ -386,10 +508,11 @@ public class CustomerMenu {
         }
 
         Customer found = customer.get();
-        System.out.println(found.getCustomerId() + " | " + found.getCustomerName() + " | " + found.getEmail() + " | " + found.getPhone() + " | 가입일: " + found.getCreatedAt().toLocalDate());
+        System.out.println(FormatDetailLine(found));
 
         while (true) {
-            System.out.print("\n3. 회원 정보 수정으로 이동   4. 회원 삭제   0. 뒤로가기   p: 회원 관리 메뉴로 이동: ");
+            String toggleLabel = Boolean.TRUE.equals(found.getIsActive()) ? "5. 회원 비활성화" : "5. 회원 활성화";
+            System.out.print("\n3. 회원 정보 수정으로 이동   4. 회원 삭제   " + toggleLabel + "   0. 뒤로가기   p: 회원 관리 메뉴로 이동: ");
             String choice = scanner.nextLine().trim();
             CheckMainMenuShortcut(choice);
             if ("3".equals(choice)) {
@@ -397,15 +520,21 @@ public class CustomerMenu {
                 return;
             }
             if ("4".equals(choice)) {
-                if (DeleteCustomer(found)) {
-                    return;
+                if (!ConfirmAndDelete(found)) {
+                    Delete();
                 }
-                continue;
+                return;
+            }
+            if ("5".equals(choice)) {
+                if (!ConfirmAndToggleActive(found)) {
+                    Deactivate();
+                }
+                return;
             }
             if (IsCancelled(choice)) {
                 return;
             }
-            System.out.println("잘못된 번호입니다.");
+            PrintInvalidChoiceMessage(choice);
         }
     }
 
@@ -447,42 +576,9 @@ public class CustomerMenu {
             return;
         }
 
-        System.out.println("\n=== 동명이인 " + results.size() + "명이 있습니다 ===");
-        for (Customer customer : results) {
-            System.out.println(customer.getCustomerId() + " | " + customer.getCustomerName()
-                    + " (뒷자리 " + LastFourDigits(customer.getPhone()) + ") | " + customer.getEmail() + " | " + customer.getPhone());
-        }
-
-        while (true) {
-            System.out.print("\n회원번호 입력: 정보 수정   0: 뒤로가기   p: 회원 관리 메뉴로 이동: ");
-            String choice = scanner.nextLine().trim();
-            CheckMainMenuShortcut(choice);
-            if (IsCancelled(choice)) {
-                return;
-            }
-
-            Long customerId;
-            try {
-                customerId = Long.parseLong(choice);
-            } catch (NumberFormatException e) {
-                System.out.println("잘못된 입력입니다.");
-                continue;
-            }
-
-            Customer selected = null;
-            for (Customer customer : results) {
-                if (customer.getCustomerId().equals(customerId)) {
-                    selected = customer;
-                    break;
-                }
-            }
-            if (selected == null) {
-                System.out.println("목록에 없는 번호입니다.");
-                continue;
-            }
-
+        Customer selected = SelectFromResults(results);
+        if (selected != null) {
             UpdateInfo(selected);
-            return;
         }
     }
 
@@ -493,11 +589,12 @@ public class CustomerMenu {
     private void UpdateInfo(Customer customer) {
         while (true) {
             System.out.println("\n=== 회원 정보 수정 ===");
-            System.out.println(customer.getCustomerId() + " | " + customer.getCustomerName() + " | " + customer.getEmail() + " | " + customer.getPhone());
+            System.out.println(FormatBasicLine(customer));
             System.out.println("1. 이름 변경");
             System.out.println("2. 전화번호 변경");
             System.out.println("3. 이메일(ID) 변경");
             System.out.println("4. 회원 삭제");
+            System.out.println(Boolean.TRUE.equals(customer.getIsActive()) ? "5. 회원 비활성화" : "5. 회원 활성화");
             System.out.println("0. 뒤로가기 (p: 회원 관리 메뉴로 이동)");
             System.out.print("번호를 입력하세요: ");
 
@@ -508,14 +605,24 @@ public class CustomerMenu {
                 case "2" -> UpdatePhone(customer);
                 case "3" -> UpdateEmail(customer);
                 case "4" -> {
-                    if (DeleteCustomer(customer)) {
-                        return;
+                    if (!ConfirmAndDelete(customer)) {
+                        Delete();
+                    }
+                    return;
+                }
+                case "5" -> {
+                    if (Boolean.TRUE.equals(customer.getIsActive())) {
+                        if (!HasOrderHistory(customer)) {
+                            SetActiveStatus(customer, false);
+                        }
+                    } else {
+                        SetActiveStatus(customer, true);
                     }
                 }
                 case "0" -> {
                     return;
                 }
-                default -> System.out.println("잘못된 번호입니다.");
+                default -> PrintInvalidChoiceMessage(choice);
             }
         }
     }
@@ -549,7 +656,7 @@ public class CustomerMenu {
 
         try {
             boolean updated = customerService.Update(customer);
-            System.out.println(updated ? "이름이 변경되었습니다." : "이름 변경에 실패했습니다.");
+            System.out.println(updated ? "이름이 \"" + customer.getCustomerName() + "\"(으)로 변경되었습니다." : "이름 변경에 실패했습니다.");
         } catch (IllegalStateException e) {
             System.out.println(DB_ERROR_MESSAGE);
         } catch (Exception e) {
@@ -592,7 +699,7 @@ public class CustomerMenu {
 
         try {
             boolean updated = customerService.Update(customer);
-            System.out.println(updated ? "전화번호가 변경되었습니다." : "전화번호 변경에 실패했습니다.");
+            System.out.println(updated ? "전화번호가 \"" + customer.getPhone() + "\"(으)로 변경되었습니다." : "전화번호 변경에 실패했습니다.");
         } catch (IllegalStateException e) {
             System.out.println(DB_ERROR_MESSAGE);
         } catch (Exception e) {
@@ -625,7 +732,7 @@ public class CustomerMenu {
                 boolean updated = customerService.UpdateEmail(customer, newEmail);
                 if (updated) {
                     customer.setEmail(newEmail);
-                    System.out.println("이메일(ID)이 수정되었습니다.");
+                    System.out.println("이메일(ID)이 \"" + newEmail + "\"(으)로 수정되었습니다.");
                 } else {
                     System.out.println("이메일 수정에 실패했습니다.");
                 }
@@ -643,42 +750,373 @@ public class CustomerMenu {
     }
 
     /**
-     * 고객 번호를 입력받아 고객 정보를 삭제합니다. 주문 이력이 있으면 삭제가 거절됩니다.
+     * "회원 삭제" 메뉴를 출력합니다. 이름으로 바로 찾거나, 이름/전화번호로 검색할 수 있습니다.
      */
     public void Delete() {
-        System.out.print("삭제할 고객 번호를 입력하세요 (0: 취소, p: 회원 관리 메뉴로 이동): ");
-        String input = scanner.nextLine().trim();
-        CheckMainMenuShortcut(input);
-        if (IsCancelled(input)) {
-            return;
+        while (true) {
+            System.out.println("\n=== 회원 삭제 ===");
+            System.out.println("1. 회원 이름 입력");
+            System.out.println("2. 회원 검색");
+            System.out.println("0. 뒤로가기");
+            System.out.print("번호를 입력하세요: ");
+
+            String choice = scanner.nextLine().trim();
+            switch (choice) {
+                case "1" -> {
+                    if (FindAndDeleteByName()) {
+                        return;
+                    }
+                }
+                case "2" -> {
+                    if (FindAndDeleteBySearch()) {
+                        return;
+                    }
+                }
+                case "0" -> {
+                    return;
+                }
+                default -> PrintInvalidChoiceMessage(choice);
+            }
+        }
+    }
+
+    /**
+     * 이름을 입력받아 삭제 대상을 찾습니다. 동명이인이 여러 명이면 휴대폰 뒷자리와 함께 목록을 보여주고 고르게 합니다.
+     *
+     * @return "뒤로가기"를 선택해서 Delete() 전체를 끝내야 하면 true, 삭제 메뉴로 돌아가야 하면 false
+     */
+    private boolean FindAndDeleteByName() {
+        System.out.print("삭제할 회원 이름을 입력하세요 (0: 취소, p: 회원 관리 메뉴로 이동): ");
+        String name = scanner.nextLine().trim();
+        CheckMainMenuShortcut(name);
+        if (IsCancelled(name)) {
+            return false;
+        }
+        if (name.isEmpty()) {
+            System.out.println("이름을 입력해주세요.");
+            return false;
         }
 
-        Long customerId;
+        List<Customer> results;
         try {
-            customerId = Long.parseLong(input);
-        } catch (NumberFormatException e) {
-            System.out.println("숫자로 입력해주세요.");
-            return;
-        }
-
-        Optional<Customer> existing;
-        try {
-            existing = customerService.FindById(customerId);
+            results = customerService.SearchByName(name);
         } catch (IllegalStateException e) {
             System.out.println(DB_ERROR_MESSAGE);
-            return;
+            return false;
         } catch (Exception e) {
             System.out.println(COMMUNICATION_ERROR_MESSAGE);
-            return;
-        }
-        if (existing.isEmpty()) {
-            System.out.println("해당 번호의 회원이 없습니다.");
-            WaitForBack();
-            return;
+            return false;
         }
 
-        DeleteCustomer(existing.get());
-        WaitForBack();
+        return ResolveDeleteTarget(results);
+    }
+
+    /**
+     * 이름 또는 전화번호로 검색해서 삭제 대상을 찾습니다.
+     *
+     * @return "뒤로가기"를 선택해서 Delete() 전체를 끝내야 하면 true, 삭제 메뉴로 돌아가야 하면 false
+     */
+    private boolean FindAndDeleteBySearch() {
+        List<Customer> results;
+        while (true) {
+            System.out.print("검색할 이름 또는 이메일을 입력하세요 (0: 취소, p: 회원 관리 메뉴로 이동): ");
+            String keyword = scanner.nextLine().trim();
+            CheckMainMenuShortcut(keyword);
+            if (IsCancelled(keyword)) {
+                return false;
+            }
+            if (keyword.isEmpty()) {
+                System.out.println("검색어를 입력해주세요.");
+                continue;
+            }
+
+            try {
+                results = customerService.SearchByNameOrEmail(keyword);
+            } catch (IllegalStateException e) {
+                System.out.println(DB_ERROR_MESSAGE);
+                return false;
+            } catch (Exception e) {
+                System.out.println(COMMUNICATION_ERROR_MESSAGE);
+                return false;
+            }
+
+            if (results.isEmpty()) {
+                System.out.println("일치하는 회원이 없습니다. 다시 검색해주세요.");
+                continue;
+            }
+            break;
+        }
+
+        return ResolveDeleteTarget(results);
+    }
+
+    /**
+     * 검색 결과가 0명/1명/동명이인 여러 명인 경우를 처리해서 삭제 대상 한 명을 정한 뒤 ConfirmAndDelete()로 넘깁니다.
+     *
+     * @return "뒤로가기"를 선택해서 Delete() 전체를 끝내야 하면 true, 삭제 메뉴로 돌아가야 하면 false
+     */
+    private boolean ResolveDeleteTarget(List<Customer> results) {
+        if (results.isEmpty()) {
+            System.out.println("일치하는 회원이 없습니다.");
+            return false;
+        }
+
+        if (results.size() == 1) {
+            return ConfirmAndDelete(results.get(0));
+        }
+
+        Customer selected = SelectFromResults(results);
+        if (selected == null) {
+            return false;
+        }
+        return ConfirmAndDelete(selected);
+    }
+
+    /**
+     * "회원 비활성화" 메뉴를 출력합니다. 이름으로 바로 찾거나, 이름/전화번호로 검색할 수 있습니다.
+     * 이미 비활성 상태인 회원을 고르면 다시 활성화할 수도 있습니다.
+     */
+    public void Deactivate() {
+        while (true) {
+            System.out.println("\n=== 회원 비활성화 ===");
+            System.out.println("1. 회원 이름 입력");
+            System.out.println("2. 회원 검색");
+            System.out.println("0. 뒤로가기");
+            System.out.print("번호를 입력하세요: ");
+
+            String choice = scanner.nextLine().trim();
+            switch (choice) {
+                case "1" -> {
+                    if (FindAndToggleActiveByName()) {
+                        return;
+                    }
+                }
+                case "2" -> {
+                    if (FindAndToggleActiveBySearch()) {
+                        return;
+                    }
+                }
+                case "0" -> {
+                    return;
+                }
+                default -> PrintInvalidChoiceMessage(choice);
+            }
+        }
+    }
+
+    /**
+     * 이름을 입력받아 비활성화(또는 활성화) 대상을 찾습니다. 동명이인이 여러 명이면 목록에서 고르게 합니다.
+     *
+     * @return "뒤로가기"를 선택해서 Deactivate() 전체를 끝내야 하면 true, 비활성화 메뉴로 돌아가야 하면 false
+     */
+    private boolean FindAndToggleActiveByName() {
+        System.out.print("비활성화(또는 활성화)할 회원 이름을 입력하세요 (0: 취소, p: 회원 관리 메뉴로 이동): ");
+        String name = scanner.nextLine().trim();
+        CheckMainMenuShortcut(name);
+        if (IsCancelled(name)) {
+            return false;
+        }
+        if (name.isEmpty()) {
+            System.out.println("이름을 입력해주세요.");
+            return false;
+        }
+
+        List<Customer> results;
+        try {
+            results = customerService.SearchByName(name);
+        } catch (IllegalStateException e) {
+            System.out.println(DB_ERROR_MESSAGE);
+            return false;
+        } catch (Exception e) {
+            System.out.println(COMMUNICATION_ERROR_MESSAGE);
+            return false;
+        }
+
+        return ResolveToggleActiveTarget(results);
+    }
+
+    /**
+     * 이름 또는 전화번호로 검색해서 비활성화(또는 활성화) 대상을 찾습니다.
+     *
+     * @return "뒤로가기"를 선택해서 Deactivate() 전체를 끝내야 하면 true, 비활성화 메뉴로 돌아가야 하면 false
+     */
+    private boolean FindAndToggleActiveBySearch() {
+        List<Customer> results;
+        while (true) {
+            System.out.print("검색할 이름 또는 이메일을 입력하세요 (0: 취소, p: 회원 관리 메뉴로 이동): ");
+            String keyword = scanner.nextLine().trim();
+            CheckMainMenuShortcut(keyword);
+            if (IsCancelled(keyword)) {
+                return false;
+            }
+            if (keyword.isEmpty()) {
+                System.out.println("검색어를 입력해주세요.");
+                continue;
+            }
+
+            try {
+                results = customerService.SearchByNameOrEmail(keyword);
+            } catch (IllegalStateException e) {
+                System.out.println(DB_ERROR_MESSAGE);
+                return false;
+            } catch (Exception e) {
+                System.out.println(COMMUNICATION_ERROR_MESSAGE);
+                return false;
+            }
+
+            if (results.isEmpty()) {
+                System.out.println("일치하는 회원이 없습니다. 다시 검색해주세요.");
+                continue;
+            }
+            break;
+        }
+
+        return ResolveToggleActiveTarget(results);
+    }
+
+    /**
+     * 검색 결과가 0명/1명/동명이인 여러 명인 경우를 처리해서 대상 한 명을 정한 뒤 ConfirmAndToggleActive()로 넘깁니다.
+     *
+     * @return "뒤로가기"를 선택해서 Deactivate() 전체를 끝내야 하면 true, 비활성화 메뉴로 돌아가야 하면 false
+     */
+    private boolean ResolveToggleActiveTarget(List<Customer> results) {
+        if (results.isEmpty()) {
+            System.out.println("일치하는 회원이 없습니다.");
+            return false;
+        }
+
+        if (results.size() == 1) {
+            return ConfirmAndToggleActive(results.get(0));
+        }
+
+        Customer selected = SelectFromResults(results);
+        if (selected == null) {
+            return false;
+        }
+        return ConfirmAndToggleActive(selected);
+    }
+
+    /**
+     * 대상 회원 정보를 다시 보여주고 한 번 더 확인시킨 뒤 활성 상태를 바꿉니다. 주문 이력이 있으면 비활성화할 수 없습니다.
+     * 처리(또는 취소) 후에는 계속 다른 회원을 처리할지, 회원 관리 메뉴로 돌아갈지 선택하게 합니다.
+     *
+     * @return "뒤로가기"를 선택해서 Deactivate() 전체를 끝내야 하면 true, 비활성화 메뉴로 돌아가야 하면 false
+     */
+    private boolean ConfirmAndToggleActive(Customer customer) {
+        System.out.println("\n=== 대상 회원 정보 ===");
+        System.out.println(FormatDetailLine(customer));
+
+        if (Boolean.TRUE.equals(customer.getIsActive())) {
+            if (!HasOrderHistory(customer)) {
+                System.out.print("정말 비활성화하시겠습니까? (y: 비활성화, 0 또는 그 외: 취소): ");
+                String confirm = scanner.nextLine().trim();
+                if ("y".equalsIgnoreCase(confirm)) {
+                    SetActiveStatus(customer, false);
+                } else {
+                    System.out.println("취소했습니다.");
+                }
+            }
+        } else {
+            System.out.print("이미 비활성 상태입니다. 다시 활성화하시겠습니까? (y: 활성화, 0 또는 그 외: 취소): ");
+            String confirm = scanner.nextLine().trim();
+            if ("y".equalsIgnoreCase(confirm)) {
+                SetActiveStatus(customer, true);
+            } else {
+                System.out.println("취소했습니다.");
+            }
+        }
+
+        while (true) {
+            System.out.println("\n1. 이어서 처리하기");
+            System.out.println("0. 뒤로가기 (회원 관리 메뉴로 이동)");
+            System.out.print("번호를 입력하세요: ");
+            String choice = scanner.nextLine().trim();
+            CheckMainMenuShortcut(choice);
+            switch (choice) {
+                case "1":
+                    return false;
+                case "0":
+                    return true;
+                default:
+                    PrintInvalidChoiceMessage(choice);
+            }
+        }
+    }
+
+    /**
+     * 삭제하기 전에 회원 정보를 다시 보여주고 한 번 더 확인시킨 뒤 삭제합니다.
+     * 삭제(또는 취소) 후에는 계속 다른 회원을 삭제할지, 회원 관리 메뉴로 돌아갈지 선택하게 합니다.
+     *
+     * @return "뒤로가기"를 선택해서 Delete() 전체를 끝내야 하면 true, 삭제 메뉴로 돌아가야 하면 false
+     */
+    private boolean ConfirmAndDelete(Customer customer) {
+        System.out.println("\n=== 삭제할 회원 정보 ===");
+        System.out.println(FormatDetailLine(customer));
+
+        if (!HasOrderHistory(customer)) {
+            System.out.println("\n이 회원은 주문 내역이 없습니다.");
+            DeleteCustomer(customer);
+        }
+
+        while (true) {
+            System.out.println("\n1. 이어서 삭제하기");
+            System.out.println("0. 뒤로가기 (회원 관리 메뉴로 이동)");
+            System.out.print("번호를 입력하세요: ");
+            String choice = scanner.nextLine().trim();
+            CheckMainMenuShortcut(choice);
+            switch (choice) {
+                case "1":
+                    return false;
+                case "0":
+                    return true;
+                default:
+                    PrintInvalidChoiceMessage(choice);
+            }
+        }
+    }
+
+    /**
+     * 이 회원에게 주문 이력이 있는지 확인합니다. 있으면 안내 메시지를 출력합니다.
+     * 주문 이력이 있는 회원은 삭제와 비활성화 둘 다 할 수 없다는 규칙을, 삭제/비활성화 두 흐름에서 공통으로 씁니다.
+     *
+     * @return 주문 이력이 있어서(또는 조회 자체가 실패해서) 삭제/비활성화를 막아야 하면 true
+     */
+    private boolean HasOrderHistory(Customer customer) {
+        List<OrderSummaryView> orders;
+        try {
+            orders = customerService.FindOrderHistory(customer.getCustomerId());
+        } catch (IllegalStateException e) {
+            System.out.println(DB_ERROR_MESSAGE);
+            return true;
+        } catch (Exception e) {
+            System.out.println(COMMUNICATION_ERROR_MESSAGE);
+            return true;
+        }
+
+        if (orders.isEmpty()) {
+            return false;
+        }
+        System.out.println("\n이 회원은 주문 이력이 " + orders.size() + "건 있어서 삭제와 비활성화 모두 할 수 없습니다.");
+        return true;
+    }
+
+    /**
+     * 회원 계정의 활성 상태를 바꿉니다. "회원 정보 수정" 화면의 활성화/비활성화 메뉴에서 사용합니다.
+     */
+    private void SetActiveStatus(Customer customer, boolean active) {
+        try {
+            boolean updated = customerService.UpdateActiveStatus(customer, active);
+            if (updated) {
+                customer.setIsActive(active);
+                System.out.println("계정이 " + (active ? "활성화" : "비활성화") + "되었습니다.");
+            } else {
+                System.out.println("상태 변경에 실패했습니다.");
+            }
+        } catch (IllegalStateException e) {
+            System.out.println(DB_ERROR_MESSAGE);
+        } catch (Exception e) {
+            System.out.println(COMMUNICATION_ERROR_MESSAGE);
+        }
     }
 
     /**

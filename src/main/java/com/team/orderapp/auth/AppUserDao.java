@@ -66,6 +66,16 @@ public interface AppUserDao {
     boolean UpdateEmail(@Param("userId") Long userId, @Param("email") String email);
 
     /**
+     * 계정 활성 상태만 수정합니다. 회원 비활성화/활성화 시 사용합니다.
+     *
+     * @param userId   수정할 사용자 ID
+     * @param isActive 새 활성 상태
+     * @return 수정 성공 여부
+     */
+    @Update("UPDATE app_user SET is_active = #{isActive} WHERE user_id = #{userId}")
+    boolean UpdateActiveStatus(@Param("userId") Long userId, @Param("isActive") boolean isActive);
+
+    /**
      * 비밀번호 해시만 수정합니다. 비밀번호 변경 시 사용합니다.
      *
      * @param userId       수정할 사용자 ID

@@ -29,7 +29,7 @@ public interface CustomerDao {
      * @param customerId 조회할 고객 ID
      * @return 조회된 Customer Optional 객체
      */
-    @Select("SELECT c.customer_id, c.user_id, c.customer_name, c.phone, c.created_at, u.email " +
+    @Select("SELECT c.customer_id, c.user_id, c.customer_name, c.phone, c.created_at, u.email, u.is_active " +
             "FROM customer c JOIN app_user u ON c.user_id = u.user_id " +
             "WHERE c.customer_id = #{customerId}")
     Optional<Customer> FindById(@Param("customerId") Long customerId);
@@ -40,7 +40,7 @@ public interface CustomerDao {
      * @param email 조회할 이메일
      * @return 조회된 Customer Optional 객체
      */
-    @Select("SELECT c.customer_id, c.user_id, c.customer_name, c.phone, c.created_at, u.email " +
+    @Select("SELECT c.customer_id, c.user_id, c.customer_name, c.phone, c.created_at, u.email, u.is_active " +
             "FROM customer c JOIN app_user u ON c.user_id = u.user_id " +
             "WHERE u.email = #{email}")
     Optional<Customer> FindByEmail(@Param("email") String email);
@@ -59,7 +59,7 @@ public interface CustomerDao {
      *
      * @return 고객 목록 리스트
      */
-    @Select("SELECT c.customer_id, c.user_id, c.customer_name, c.phone, c.created_at, u.email " +
+    @Select("SELECT c.customer_id, c.user_id, c.customer_name, c.phone, c.created_at, u.email, u.is_active " +
             "FROM customer c JOIN app_user u ON c.user_id = u.user_id " +
             "ORDER BY c.customer_id")
     List<Customer> FindAll();
@@ -79,7 +79,7 @@ public interface CustomerDao {
      * @param offset 건너뛸 개수 (0부터 시작)
      * @return 해당 페이지에 속하는 고객 목록
      */
-    @Select("SELECT c.customer_id, c.user_id, c.customer_name, c.phone, c.created_at, u.email " +
+    @Select("SELECT c.customer_id, c.user_id, c.customer_name, c.phone, c.created_at, u.email, u.is_active " +
             "FROM customer c JOIN app_user u ON c.user_id = u.user_id " +
             "ORDER BY c.customer_id LIMIT #{limit} OFFSET #{offset}")
     List<Customer> FindPage(@Param("limit") int limit, @Param("offset") int offset);
@@ -90,7 +90,7 @@ public interface CustomerDao {
      * @param customerName 검색할 이름
      * @return 검색된 고객 목록
      */
-    @Select("SELECT c.customer_id, c.user_id, c.customer_name, c.phone, c.created_at, u.email " +
+    @Select("SELECT c.customer_id, c.user_id, c.customer_name, c.phone, c.created_at, u.email, u.is_active " +
             "FROM customer c JOIN app_user u ON c.user_id = u.user_id " +
             "WHERE c.customer_name LIKE CONCAT('%', #{customerName}, '%') ORDER BY c.customer_id")
     List<Customer> FindByName(@Param("customerName") String customerName);
@@ -102,7 +102,7 @@ public interface CustomerDao {
      * @param keyword 검색어
      * @return 검색된 고객 목록
      */
-    @Select("SELECT c.customer_id, c.user_id, c.customer_name, c.phone, c.created_at, u.email " +
+    @Select("SELECT c.customer_id, c.user_id, c.customer_name, c.phone, c.created_at, u.email, u.is_active " +
             "FROM customer c JOIN app_user u ON c.user_id = u.user_id " +
             "WHERE c.customer_name LIKE CONCAT('%', #{keyword}, '%') " +
             "OR REPLACE(c.phone, '-', '') LIKE CONCAT('%', REPLACE(#{keyword}, '-', ''), '%') " +
@@ -115,7 +115,7 @@ public interface CustomerDao {
      * @param keyword 검색어
      * @return 검색된 고객 목록
      */
-    @Select("SELECT c.customer_id, c.user_id, c.customer_name, c.phone, c.created_at, u.email " +
+    @Select("SELECT c.customer_id, c.user_id, c.customer_name, c.phone, c.created_at, u.email, u.is_active " +
             "FROM customer c JOIN app_user u ON c.user_id = u.user_id " +
             "WHERE c.customer_name LIKE CONCAT('%', #{keyword}, '%') " +
             "OR u.email LIKE CONCAT('%', #{keyword}, '%') " +

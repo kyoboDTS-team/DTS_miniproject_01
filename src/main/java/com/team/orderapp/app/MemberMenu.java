@@ -13,8 +13,8 @@ public class MemberMenu {
 
     private final Scanner scanner;
 
-    // 로그인한 회원 이메일
-    private final String email;
+    // 로그인한 회원 이메일 (내정보조회/수정에서 이메일을 바꾸면 최신값으로 갱신됨)
+    private String email;
 
     private final ProductMenu productMenu;
 
@@ -74,7 +74,14 @@ public class MemberMenu {
                     break;
 
                 case "6":
-                    new MyInfoMenu(scanner, email).Run();
+                    MyInfoMenu myInfoMenu = new MyInfoMenu(scanner, email);
+                    if (!myInfoMenu.Run()) {
+                        // 회원 탈퇴로 계정이 사라짐 - GuestMenu 또는 로그인 흐름으로 돌아가도록
+                        // 상위 호출부에서 처리
+                        return;
+                    }
+                    // 이메일을 바꿨을 수도 있으니, 화면 상단 표시용 email도 최신값으로 갱신
+                    email = myInfoMenu.GetEmail();
                     break;
 
                 case "7":
