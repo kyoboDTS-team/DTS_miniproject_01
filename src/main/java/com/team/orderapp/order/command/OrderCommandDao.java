@@ -15,23 +15,38 @@ import java.util.List;
 public interface OrderCommandDao {
 
     /**
-     * 신규 주문 마스터 레코드를 저장합니다.
+     * 신규 주문을 저장합니다. 성공하면 생성된 order_id가 넘겨받은 order 객체에 채워집니다
+     * (order_item.order_id로 연결하려면 이 값이 필요합니다).
      *
-     * @param order 저장할 Order 객체
-     * @return 생성된 주문 ID (실패 시 null)
+     * ordered_at(CURRENT_TIMESTAMP)과 status('CONFIRMED')는 DB 기본값이 있어 넣지 않습니다.
+     * customer_id는 비회원 주문이면 null입니다.
+     *
+     * @param order 저장할 Order 객체 (orderNo, customerId만 사용)
+     * @return 저장된 행 수 (성공하면 1)
      */
-    @Insert("INSERT INTO orders (order_no, customer_id, status) VALUES (#{orderNo}, #{customerId}, #{status})")
-    @Options(useGeneratedKeys = true, keyProperty = "orderId")
-    Long InsertOrder(Order order);
+    @Insert("""
+        INSERT INTO orders (order_no, customer_id)
+        VALUES (#{orderNo}, #{customerId})
+        """)
+    @Options(useGeneratedKeys = true, keyProperty = "orderId", keyColumn = "order_id")
+    int InsertOrder(Order order);
 
     /**
-     * 단일 주문 상세 항목을 저장합니다.
+     * 주문 품목 한 건을 저장합니다. 성공하면 생성된 order_item_id가 item 객체에 채워집니다
+     * (시리얼 상품이면 order_item_unit.order_item_id로 연결해야 하기 때문입니다).
+     *
+     * unit_price에는 주문 시점의 판매가를 복사해 넣습니다. 나중에 상품 가격이 바뀌어도
+     * 과거 주문 금액은 그대로 남아야 하기 때문입니다.
      *
      * @param item 저장할 OrderItem 객체
-     * @return 저장 성공 여부
+     * @return 저장된 행 수 (성공하면 1)
      */
-    @Insert("INSERT INTO order_item (order_id, product_id, quantity, unit_price) VALUES (#{orderId}, #{productId}, #{quantity}, #{unitPrice})")
-    boolean InsertOrderItem(OrderItem item);
+    @Insert("""
+        INSERT INTO order_item (order_id, product_id, quantity, unit_price)
+        VALUES (#{orderId}, #{productId}, #{quantity}, #{unitPrice})
+        """)
+    @Options(useGeneratedKeys = true, keyProperty = "orderItemId", keyColumn = "order_item_id")
+    int InsertOrderItem(OrderItem item);
 
     /**
      * 다건의 주문 상세 항목들을 일괄 저장합니다.
@@ -44,8 +59,7 @@ public interface OrderCommandDao {
             return false;
         }
         for (OrderItem item : items) {
-            boolean success = InsertOrderItem(item);
-            if (!success) {
+            if (InsertOrderItem(item) != 1) {
                 return false;
             }
         }
