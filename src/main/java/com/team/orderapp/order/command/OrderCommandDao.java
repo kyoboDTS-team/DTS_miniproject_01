@@ -2,6 +2,7 @@ package com.team.orderapp.order.command;
 
 import com.team.orderapp.order.model.Order;
 import com.team.orderapp.order.model.OrderItem;
+import com.team.orderapp.order.model.OrderItemUnit;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Options;
 import org.apache.ibatis.annotations.Param;
@@ -121,4 +122,63 @@ public interface OrderCommandDao {
         ORDER BY order_item_id
         """)
     List<OrderItem> FindItemsByOrderId(@Param("orderId") Long orderId);
+
+    /**
+     * 주문 품목에 배정한 시리얼 한 건을 저장합니다. 시리얼 관리 상품(requires_serial = true)만
+     * 이 행을 가지며, 수량이 2면 2행이 생깁니다.
+     *
+     * assigned_at은 DB 기본값(CURRENT_TIMESTAMP)이 있어 넣지 않습니다.
+     * returned_at은 반품 전까지 null입니다.
+     *
+     * @param unit 저장할 OrderItemUnit 객체 (orderItemId, productUnitId만 사용)
+     * @return 저장된 행 수 (성공하면 1)
+     */
+    @Insert("""
+        INSERT INTO order_item_unit (order_item_id, product_unit_id)
+        VALUES (#{orderItemId}, #{productUnitId})
+        """)
+    @Options(useGeneratedKeys = true, keyProperty = "orderItemUnitId", keyColumn = "order_item_unit_id")
+    int InsertOrderItemUnit(OrderItemUnit unit);
+
+    /**
+     * 한 주문에 배정된 시리얼을 모두 조회합니다. 반품할 때 어떤 개체를 되돌려야 하는지
+     * 알아내는 데 씁니다.
+     *
+     * order_item_unit은 주문(order_id)이 아니라 주문 품목(order_item_id)에 매달려 있어,
+     * order_item을 거쳐 조인합니다.
+     *
+     * @param orderId 주문의 PK
+     * @return 그 주문에 배정된 시리얼 목록. 시리얼 상품이 없으면 빈 목록
+     */
+    @Select("""
+        SELECT
+            oiu.order_item_unit_id,
+            oiu.order_item_id,
+            oiu.product_unit_id,
+            oiu.assigned_at,
+            oiu.returned_at
+        FROM order_item_unit oiu
+        JOIN order_item oi ON oiu.order_item_id = oi.order_item_id
+        WHERE oi.order_id = #{orderId}
+        ORDER BY oiu.order_item_unit_id
+        """)
+    List<OrderItemUnit> FindUnitsByOrderId(@Param("orderId") Long orderId);
+
+    /**
+     * 배정 이력에 반품 시각을 기록합니다.
+     *
+     * WHERE에 returned_at IS NULL 조건이 있어, 이미 반품 처리된 행은 바뀌지 않습니다.
+     * 반환값이 0이면 중복 반품으로 보고 거절해야 합니다.
+     *
+     * @param orderItemUnitId 배정 이력의 PK
+     * @return 바뀐 행 수. 1이면 기록 성공, 0이면 이미 반품된 행
+     */
+    @Update("""
+        UPDATE order_item_unit
+        SET returned_at = CURRENT_TIMESTAMP
+        WHERE order_item_unit_id = #{orderItemUnitId}
+          AND returned_at IS NULL
+        """)
+    int MarkUnitReturned(@Param("orderItemUnitId") Long orderItemUnitId);
 }
+
