@@ -211,9 +211,28 @@ public class SignupMenu {
         System.out.println("전화번호 : " + phone);
         System.out.println("====================");
 
-        System.out.print("\n0을 입력하면 뒤로 돌아가기: ");
+        boolean loggedIn = AutoLogin(email, password);
+
+        String backPrompt = loggedIn ? "0을 입력하면 회원 메뉴로 이동: " : "0을 입력하면 뒤로 돌아가기: ";
+        System.out.print("\n" + backPrompt);
         while (!CANCEL_INPUT.equals(scanner.nextLine().trim())) {
-            System.out.print("0을 입력하면 뒤로 돌아가기: ");
+            System.out.print(backPrompt);
+        }
+    }
+
+    /**
+     * 가입한 계정으로 바로 로그인합니다. 로그인에 실패해도 가입은 이미 끝났으므로 안내만 하고 넘어갑니다.
+     *
+     * @return 로그인에 성공했으면 true
+     */
+    private boolean AutoLogin(String email, String password) {
+        try {
+            new LoginService().Login(email, password);
+            System.out.println("\n자동으로 로그인되었습니다.");
+            return true;
+        } catch (Exception e) {
+            System.out.println("\n가입은 완료되었습니다. 로그인 메뉴에서 로그인해주세요.");
+            return false;
         }
     }
 

@@ -1,5 +1,7 @@
 package com.team.orderapp.app;
 
+import com.team.orderapp.auth.LoginService;
+import com.team.orderapp.auth.LoginSession;
 import com.team.orderapp.auth.SignupMenu;
 import com.team.orderapp.order.query.OrderQueryMenu;
 import com.team.orderapp.product.ProductMenu;
@@ -75,6 +77,10 @@ public class GuestMenu {
 
                 case "6":
                     new SignupMenu(scanner).SignUp();
+                    // 가입 후 자동 로그인에 성공했으면 회원 메뉴로 이동
+                    if (LoginSession.IsLoggedIn()) {
+                        EnterMemberMenu();
+                    }
                     break;
 
                 case "0":
@@ -87,6 +93,21 @@ public class GuestMenu {
                     );
             }
         }
+    }
+
+
+    // ============================================================
+    // 회원 메뉴 진입
+    // ============================================================
+
+    /**
+     * 로그인한 회원의 이메일을 넘겨 회원 메뉴를 실행하고, 메뉴에서 돌아오면 로그아웃 처리합니다.
+     */
+    private void EnterMemberMenu() {
+
+        new MemberMenu(scanner, LoginSession.getEmail()).Run();
+
+        new LoginService().Logout();
     }
 
 
