@@ -72,6 +72,18 @@ public final class ConsoleUi {
     private static final String RED_CODE = ESC + "31m";
 
     /**
+     * 화면을 지우는 제어 시퀀스입니다. {@code \033[H\033[2J}와 같은 값입니다.
+     *
+     * <pre>
+     * ESC [ H   커서를 화면 왼쪽 맨 위(1행 1열)로 옮긴다
+     * ESC [ 2J  화면 전체를 지운다
+     * </pre>
+     *
+     * 지우기만 하면 커서가 그대로 남아 다음 출력이 화면 중간에서 시작하므로 둘을 같이 씁니다.
+     */
+    private static final String CLEAR_SEQUENCE = ESC + "H" + ESC + "2J";
+
+    /**
      * 색상 출력 사용 여부입니다.
      *
      * ANSI를 해석하지 못하는 콘솔에서는 색상 코드가 글자로 보이므로 끌 수 있게 했습니다.
@@ -81,6 +93,14 @@ public final class ConsoleUi {
 
     /** 화면 지우기 사용 여부입니다. */
     private static boolean clearEnabled = true;
+
+    /**
+     * ANSI 지우기 시퀀스 사용 여부입니다.
+     *
+     * 이 시퀀스를 해석하지 못하는 콘솔에서 {@code [H[2J}가 글자로 찍히면 false로 끄세요.
+     * 색상은 그대로 두고 지우기만 빈 줄 방식으로 바뀝니다.
+     */
+    private static boolean ansiClearEnabled = true;
 
     /** ANSI 지우기를 쓸 수 없을 때 대신 출력할 빈 줄 수입니다. */
     private static final int CLEAR_LINES = 30;
@@ -185,13 +205,34 @@ public final class ConsoleUi {
             return;
         }
 
-        if (System.getenv("TERM") != null && colorEnabled) {
-            System.out.print(ESC + "H" + ESC + "2J");
+        boolean ansiUsed = ansiClearEnabled && colorEnabled;
+
+        // ANSI를 해석하는 콘솔이면 이 한 줄로 화면이 지워진다.
+        // println이 아니라 print + flush를 쓰는 이유는, 줄바꿈 없이 즉시 내보내야 하기 때문이다.
+        if (ansiUsed) {
+            System.out.print(CLEAR_SEQUENCE);
             System.out.flush();
-            return;
         }
 
-        System.out.println("\n".repeat(CLEAR_LINES));
+        /*
+         * IntelliJ 실행창처럼 위 시퀀스를 무시하는 콘솔에서는 화면이 그대로 남으므로,
+         * 빈 줄을 출력해 이전 화면을 위로 밀어낸다.
+         *
+         * 진짜 터미널(TERM이 설정된 환경)에서는 이미 지워졌으니 빈 줄을 넣지 않는다.
+         */
+        if (!ansiUsed || System.getenv("TERM") == null) {
+            System.out.println("\n".repeat(CLEAR_LINES));
+        }
+    }
+
+
+    /**
+     * ANSI 지우기 시퀀스 사용을 켜거나 끕니다.
+     *
+     * 콘솔에 {@code [H[2J} 같은 글자가 찍히면 false로 호출하세요. 색상은 그대로 유지됩니다.
+     */
+    public static void SetAnsiClearEnabled(boolean enabled) {
+        ansiClearEnabled = enabled;
     }
 
 
