@@ -4,6 +4,7 @@ import com.team.orderapp.stock.SerialStockConsistency;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
+import org.apache.ibatis.annotations.Update;
 
 import java.util.List;
 import java.util.Optional;
@@ -97,4 +98,45 @@ public interface ProductUnitDao {
     ORDER BY p.product_id
     """)
     List<SerialStockConsistency> FindSerialStockConsistency();
+
+    // =========================================================
+    // 주문 배정용: 판매 가능한 시리얼을 수량만큼 조회
+    // 작업: 주문/반품 시리얼 배정 / 작업자: 김상진(Dorazee0209)
+    // =========================================================
+    @Select("""
+        SELECT
+            product_unit_id,
+            product_id,
+            serial_number,
+            unit_status,
+            created_at
+        FROM product_unit
+        WHERE product_id = #{productId}
+          AND unit_status = 'AVAILABLE'
+        ORDER BY product_unit_id
+        LIMIT #{limit}
+        """)
+    List<ProductUnit> FindAvailableByProductId(
+            @Param("productId") Long productId,
+            @Param("limit") int limit
+    );
+
+
+    // =========================================================
+    // 주문/반품: 시리얼 상태 변경 (AVAILABLE <-> SOLD)
+    // 현재 상태가 기대값과 같을 때만 바뀐다(조건부 UPDATE).
+    // 바뀐 행 수가 0이면 그 사이 다른 처리가 선점한 것이므로 호출한 쪽에서 거절한다.
+    // 작업: 주문/반품 시리얼 배정 / 작업자: 김상진(Dorazee0209)
+    // =========================================================
+    @Update("""
+        UPDATE product_unit
+        SET unit_status = #{newStatus}
+        WHERE product_unit_id = #{productUnitId}
+          AND unit_status = #{expectedStatus}
+        """)
+    int UpdateStatus(
+            @Param("productUnitId") Long productUnitId,
+            @Param("expectedStatus") String expectedStatus,
+            @Param("newStatus") String newStatus
+    );
 }
