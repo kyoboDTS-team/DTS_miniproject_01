@@ -16,6 +16,9 @@ import java.util.Optional;
  */
 public class CustomerService {
 
+    /** 관리자가 회원 비밀번호를 초기화할 때 설정되는 기본 비밀번호입니다. */
+    public static final String DEFAULT_PASSWORD = "Reset1234!!";
+
     /**
      * DB 세션을 열고, 연결에 실패하면 IllegalStateException을 던집니다.
      * DbConnectionFactory.OpenSession()은 연결 실패 시 null을 돌려주는데,
@@ -205,6 +208,21 @@ public class CustomerService {
         try (SqlSession session = OpenSessionOrThrow()) {
             AppUserDao appUserDao = session.getMapper(AppUserDao.class);
             boolean updated = appUserDao.UpdatePassword(customer.getUserId(), PasswordHasher.Hash(newPassword));
+            session.commit();
+            return updated;
+        }
+    }
+
+    /**
+     * 회원의 비밀번호를 기본 비밀번호(DEFAULT_PASSWORD)로 초기화합니다. 관리자가 비밀번호를 잊은 회원을 도울 때 사용합니다.
+     *
+     * @param customer 대상 고객 (userId가 설정되어 있어야 함)
+     * @return 초기화 성공 여부
+     */
+    public boolean ResetPassword(Customer customer) {
+        try (SqlSession session = OpenSessionOrThrow()) {
+            AppUserDao appUserDao = session.getMapper(AppUserDao.class);
+            boolean updated = appUserDao.UpdatePassword(customer.getUserId(), PasswordHasher.Hash(DEFAULT_PASSWORD));
             session.commit();
             return updated;
         }
