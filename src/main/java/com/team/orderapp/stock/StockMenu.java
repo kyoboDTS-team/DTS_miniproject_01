@@ -1,5 +1,6 @@
 package com.team.orderapp.stock;
 
+import com.team.orderapp.common.ConsoleUi;
 import com.team.orderapp.product.ProductUnit;
 import com.team.orderapp.product.Product;
 
@@ -17,6 +18,11 @@ import com.team.orderapp.stock.SerialStockConsistency;
  * 관리자 재고 / 시리얼 관리 메뉴
  */
 public class StockMenu {
+
+    // 표 열 너비 (한글은 2칸으로 계산)
+    private static final int STOCK_TABLE_WIDTH = 80;
+    private static final int HISTORY_TABLE_WIDTH = 104;
+    private static final int CHECK_TABLE_WIDTH = 80;
 
     private final Scanner scanner;
     private final StockService stockService;
@@ -86,9 +92,8 @@ public class StockMenu {
 
 
                 default:
-                    System.out.println(
-                            "올바른 메뉴 번호를 입력해 주세요."
-                    );
+                    ConsoleUi.InvalidMenu();
+                    ConsoleUi.PressEnter(scanner);
             }
         }
     }
@@ -100,33 +105,24 @@ public class StockMenu {
 
     private void PrintMenu() {
 
+        ConsoleUi.ClearScreen();
+        ConsoleUi.ScreenHeader("ADMIN / STOCK", "재고 / 시리얼 관리");
+
+        ConsoleUi.Section("재고");
+        ConsoleUi.MenuItem("01", "재고 조정");
+        ConsoleUi.MenuItem("04", "재고 현황 / 부족 관리");
+        ConsoleUi.MenuItem("05", "재고 변경 이력");
+
+        ConsoleUi.Section("시리얼");
+        ConsoleUi.MenuItem("02", "시리얼 등록");
+        ConsoleUi.MenuItem("03", "시리얼 조회");
+        ConsoleUi.MenuItem("06", "시리얼 재고 정합성 검사");
+
+        ConsoleUi.Section("시스템");
+        ConsoleUi.MenuItem("00", "이전");
+
         System.out.println();
-        System.out.println(
-                "========================================"
-        );
-
-        System.out.println(
-                "          재고 / 시리얼 관리"
-        );
-
-        System.out.println(
-                "========================================"
-        );
-
-        System.out.println("1. 재고 조정");
-        System.out.println("2. 시리얼 등록");
-        System.out.println("3. 시리얼 조회");
-        System.out.println("4. 재고 현황 / 부족 관리");
-        System.out.println("5. 재고 변경 이력");
-        System.out.println("6. 시리얼 재고 정합성 검사");
-        System.out.println("0. 이전");
-        System.out.println(
-                "----------------------------------------"
-        );
-
-        System.out.print(
-                "선택 > "
-        );
+        ConsoleUi.Prompt("선택");
     }
 
 
@@ -137,45 +133,33 @@ public class StockMenu {
 
     private void AdjustStock() {
 
-        System.out.println();
-        System.out.println(
-                "========================================"
-        );
-        System.out.println(
-                "           재고 입고 / 조정"
-        );
-        System.out.println(
-                "========================================"
-        );
+        ConsoleUi.ClearScreen();
+        ConsoleUi.ScreenHeader("ADMIN", "재고 입고 / 조정");
 
 
         try {
 
             Long productId =
                     ReadLong(
-                            "상품 ID > "
+                            "상품 ID"
                     );
 
 
             System.out.println();
-            System.out.println(
-                    "양수 입력 : 입고"
-            );
+            ConsoleUi.Info("양수 입력 : 입고");
 
-            System.out.println(
-                    "음수 입력 : 차감"
-            );
+            ConsoleUi.Info("음수 입력 : 차감");
 
 
             int delta =
                     ReadInteger(
-                            "변경 수량 > "
+                            "변경 수량"
                     );
 
 
             String reason =
                     ReadRequiredString(
-                            "조정 사유 > "
+                            "조정 사유"
                     );
 
 
@@ -190,19 +174,14 @@ public class StockMenu {
 
             if (result) {
                 System.out.println();
-                System.out.println(
-                        "재고가 정상적으로 변경되었습니다."
-                );
+                ConsoleUi.Success("재고가 정상적으로 변경되었습니다.");
             }
 
 
         } catch (Exception e) {
 
             System.out.println();
-            System.out.println(
-                    "재고 변경 실패: "
-                            + e.getMessage()
-            );
+            ConsoleUi.Error("재고 변경 실패: " + e.getMessage());
         }
     }
 
@@ -214,29 +193,21 @@ public class StockMenu {
 
     private void RegisterSerial() {
 
-        System.out.println();
-        System.out.println(
-                "========================================"
-        );
-        System.out.println(
-                "            시리얼 등록"
-        );
-        System.out.println(
-                "========================================"
-        );
+        ConsoleUi.ClearScreen();
+        ConsoleUi.ScreenHeader("SERIAL / NEW", "시리얼 등록");
 
 
         try {
 
             Long productId =
                     ReadLong(
-                            "상품 ID > "
+                            "상품 ID"
                     );
 
 
             String serialNumber =
                     ReadRequiredString(
-                            "시리얼 번호 > "
+                            "시리얼 번호"
                     );
 
 
@@ -250,19 +221,14 @@ public class StockMenu {
             if (result) {
 
                 System.out.println();
-                System.out.println(
-                        "시리얼이 정상적으로 등록되었습니다."
-                );
+                ConsoleUi.Success("시리얼이 정상적으로 등록되었습니다.");
             }
 
 
         } catch (Exception e) {
 
             System.out.println();
-            System.out.println(
-                    "시리얼 등록 실패: "
-                            + e.getMessage()
-            );
+            ConsoleUi.Error("시리얼 등록 실패: " + e.getMessage());
         }
     }
 
@@ -274,23 +240,15 @@ public class StockMenu {
 
     private void FindSerials() {
 
-        System.out.println();
-        System.out.println(
-                "========================================"
-        );
-        System.out.println(
-                "           시리얼 목록 조회"
-        );
-        System.out.println(
-                "========================================"
-        );
+        ConsoleUi.ClearScreen();
+        ConsoleUi.ScreenHeader("ADMIN", "시리얼 목록 조회");
 
 
         try {
 
             Long productId =
                     ReadLong(
-                            "상품 ID > "
+                            "상품 ID"
                     );
 
 
@@ -302,9 +260,7 @@ public class StockMenu {
 
             if (units.isEmpty()) {
 
-                System.out.println(
-                        "등록된 시리얼이 없습니다."
-                );
+                ConsoleUi.Error("등록된 시리얼이 없습니다.");
 
                 return;
             }
@@ -312,32 +268,30 @@ public class StockMenu {
 
             System.out.println();
             System.out.println(
-                    "번호 | 시리얼번호 | 상태"
+                    ConsoleUi.Cyan(
+                            ConsoleUi.PadRight("번호", 8)
+                                    + ConsoleUi.PadRight("시리얼번호", 24)
+                                    + ConsoleUi.PadRight("상태", 12)
+                    )
             );
-
-            System.out.println(
-                    "----------------------------------------"
-            );
+            ConsoleUi.Divider(44);
 
 
             for (ProductUnit unit : units) {
 
                 System.out.println(
-                        unit.getProductUnitId()
-                                + " | "
-                                + unit.getSerialNumber()
-                                + " | "
-                                + unit.getUnitStatus()
+                        ConsoleUi.PadRight(String.valueOf(unit.getProductUnitId()), 8)
+                                + ConsoleUi.PadRight(unit.getSerialNumber(), 24)
+                                + ConsoleUi.PadRight(ConsoleUi.Status(unit.getUnitStatus()), 12)
                 );
             }
+
+            ConsoleUi.Divider(44);
 
 
         } catch (Exception e) {
 
-            System.out.println(
-                    "시리얼 조회 실패: "
-                            + e.getMessage()
-            );
+            ConsoleUi.Error("시리얼 조회 실패: " + e.getMessage());
         }
     }
 
@@ -349,33 +303,21 @@ public class StockMenu {
 
         while (true) {
 
+            ConsoleUi.ClearScreen();
+            ConsoleUi.ScreenHeader("STOCK / STATUS", "재고 현황 / 부족 관리");
+
+            ConsoleUi.Section("재고 현황");
+            ConsoleUi.MenuItem("01", "전체 재고 현황");
+            ConsoleUi.MenuItem("02", "재고 부족 상품");
+            ConsoleUi.MenuItem("03", "품절 상품");
+            ConsoleUi.MenuItem("00", "이전");
+
             System.out.println();
-            System.out.println(
-                    "========================================"
-            );
-
-            System.out.println(
-                    "          재고 현황 / 부족 관리"
-            );
-
-            System.out.println(
-                    "========================================"
-            );
-
-            System.out.println("1. 전체 재고 현황");
-            System.out.println("2. 재고 부족 상품");
-            System.out.println("3. 품절 상품");
-            System.out.println("0. 이전");
-
-            System.out.println(
-                    "----------------------------------------"
-            );
-
-            System.out.print("선택 > ");
+            ConsoleUi.Prompt("선택");
 
 
             String input =
-                    scanner.nextLine().trim();
+                    ConsoleUi.Choice(scanner.nextLine());
 
             switch (input) {
                 case "1":
@@ -394,9 +336,8 @@ public class StockMenu {
                     return;
 
                 default:
-                    System.out.println(
-                            "올바른 메뉴 번호를 입력해 주세요."
-                    );
+                    ConsoleUi.InvalidMenu();
+                    ConsoleUi.PressEnter(scanner);
             }
         }
     }
@@ -413,18 +354,8 @@ public class StockMenu {
                     stockService.FindAllStockProducts();
 
 
-            System.out.println();
-            System.out.println(
-                    "=========================================================================="
-            );
-
-            System.out.println(
-                    "                           전체 재고 현황"
-            );
-
-            System.out.println(
-                    "=========================================================================="
-            );
+            ConsoleUi.ClearScreen();
+            ConsoleUi.ScreenHeader("STOCK / ALL", "전체 재고 현황");
 
 
             PrintStockProducts(products);
@@ -434,10 +365,7 @@ public class StockMenu {
 
         } catch (Exception e) {
 
-            System.out.println(
-                    "재고 현황 조회 실패: "
-                            + e.getMessage()
-            );
+            ConsoleUi.Error("재고 현황 조회 실패: " + e.getMessage());
         }
     }
 
@@ -453,18 +381,8 @@ public class StockMenu {
                     stockService.FindLowStockProducts();
 
 
-            System.out.println();
-            System.out.println(
-                    "=========================================================================="
-            );
-
-            System.out.println(
-                    "                          재고 부족 상품"
-            );
-
-            System.out.println(
-                    "=========================================================================="
-            );
+            ConsoleUi.ClearScreen();
+            ConsoleUi.ScreenHeader("STOCK / LOW", "재고 부족 상품");
 
             PrintStockProducts(products);
 
@@ -472,10 +390,7 @@ public class StockMenu {
             RunStockReceiveFromList(products);
 
         } catch (Exception e) {
-            System.out.println(
-                    "재고 부족 상품 조회 실패: "
-                            + e.getMessage()
-            );
+            ConsoleUi.Error("재고 부족 상품 조회 실패: " + e.getMessage());
         }
     }
 
@@ -490,16 +405,8 @@ public class StockMenu {
             List<Product> products =
                     stockService.FindOutOfStockProducts();
 
-            System.out.println();
-            System.out.println(
-                    "=========================================================================="
-            );
-            System.out.println(
-                    "                              품절 상품"
-            );
-            System.out.println(
-                    "=========================================================================="
-            );
+            ConsoleUi.ClearScreen();
+            ConsoleUi.ScreenHeader("STOCK / SOLDOUT", "품절 상품");
 
             PrintStockProducts(products);
 
@@ -507,10 +414,7 @@ public class StockMenu {
             RunStockReceiveFromList(products);
 
         } catch (Exception e) {
-            System.out.println(
-                    "품절 상품 조회 실패: "
-                            + e.getMessage()
-            );
+            ConsoleUi.Error("품절 상품 조회 실패: " + e.getMessage());
         }
     }
 
@@ -533,12 +437,10 @@ public class StockMenu {
         while (true) {
 
             System.out.println();
-            System.out.print(
-                    "입고할 상품 ID 입력 (0: 이전) > "
-            );
+            ConsoleUi.Prompt("입고할 상품 ID 입력 (0: 이전)");
 
             String input =
-                    scanner.nextLine().trim();
+                    ConsoleUi.Choice(scanner.nextLine());
 
 
             if (input.equals("0")) {
@@ -562,19 +464,13 @@ public class StockMenu {
 
                 if (selectedProduct == null) {
 
-                    System.out.println(
-                            "현재 목록에 없는 상품입니다."
-                    );
+                    ConsoleUi.Info("현재 목록에 없는 상품입니다.");
                     continue;
                 }
 
 
                 System.out.println();
-                System.out.println(
-                        "선택 상품: "
-                                + selectedProduct
-                                .getProductName()
-                );
+                ConsoleUi.Info("선택 상품: " + selectedProduct .getProductName());
 
 
                 // 시리얼 관리 상품
@@ -583,9 +479,7 @@ public class StockMenu {
                                 .getRequiresSerial()
                 )) {
 
-                    System.out.println(
-                            "시리얼 관리 상품입니다."
-                    );
+                    ConsoleUi.Info("시리얼 관리 상품입니다.");
 
                     ReceiveSerialProduct(
                             selectedProduct
@@ -605,9 +499,7 @@ public class StockMenu {
 
             } catch (NumberFormatException e) {
 
-                System.out.println(
-                        "상품 ID는 숫자로 입력해 주세요."
-                );
+                ConsoleUi.Error("상품 ID는 숫자로 입력해 주세요.");
             }
         }
     }
@@ -620,14 +512,9 @@ public class StockMenu {
             Product product
     ) {
 
-        System.out.println(
-                "현재 재고: "
-                        + product.getStockQuantity()
-        );
+        ConsoleUi.Info("현재 재고: " + product.getStockQuantity());
 
-        System.out.print(
-                "입고 수량 > "
-        );
+        ConsoleUi.Prompt("입고 수량");
 
         String quantityInput =
                 scanner.nextLine().trim();
@@ -641,33 +528,25 @@ public class StockMenu {
                     );
 
         } catch (NumberFormatException e) {
-            System.out.println(
-                    "입고 수량은 숫자로 입력해 주세요."
-            );
+            ConsoleUi.Error("입고 수량은 숫자로 입력해 주세요.");
 
             return;
         }
 
         if (quantity <= 0) {
 
-            System.out.println(
-                    "입고 수량은 1 이상이어야 합니다."
-            );
+            ConsoleUi.Info("입고 수량은 1 이상이어야 합니다.");
             return;
         }
 
-        System.out.print(
-                "입고 사유 > "
-        );
+        ConsoleUi.Prompt("입고 사유");
 
         String reason =
                 scanner.nextLine().trim();
 
         if (reason.isBlank()) {
 
-            System.out.println(
-                    "입고 사유를 입력해 주세요."
-            );
+            ConsoleUi.Error("입고 사유를 입력해 주세요.");
 
             return;
         }
@@ -687,25 +566,16 @@ public class StockMenu {
                             product.getProductId()
                     );
             System.out.println();
-            System.out.println(
-                    "재고 입고가 완료되었습니다."
-            );
+            ConsoleUi.Success("재고 입고가 완료되었습니다.");
 
             if (updatedProduct != null) {
 
-                System.out.println(
-                        "현재 재고: "
-                                + updatedProduct
-                                .getStockQuantity()
-                );
+                ConsoleUi.Info("현재 재고: " + updatedProduct .getStockQuantity());
             }
 
         } catch (Exception e) {
 
-            System.out.println(
-                    "재고 입고 실패: "
-                            + e.getMessage()
-            );
+            ConsoleUi.Error("재고 입고 실패: " + e.getMessage());
         }
     }
 
@@ -717,18 +587,12 @@ public class StockMenu {
             Product product
     ) {
 
-        System.out.println(
-                "현재 재고: "
-                        + product.getStockQuantity()
-        );
+        ConsoleUi.Info("현재 재고: " + product.getStockQuantity());
 
         while (true) {
 
             System.out.println();
-            System.out.print(
-                    "등록할 시리얼 번호 "
-                            + "(0: 종료) > "
-            );
+            ConsoleUi.Prompt("등록할 시리얼 번호 (0: 종료)");
 
             String serialNumber =
                     scanner.nextLine().trim();
@@ -739,9 +603,7 @@ public class StockMenu {
 
             if (serialNumber.isBlank()) {
 
-                System.out.println(
-                        "시리얼 번호를 입력해 주세요."
-                );
+                ConsoleUi.Error("시리얼 번호를 입력해 주세요.");
 
                 continue;
             }
@@ -754,9 +616,7 @@ public class StockMenu {
                         serialNumber
                 );
 
-                System.out.println(
-                        "시리얼 등록이 완료되었습니다."
-                );
+                ConsoleUi.Success("시리얼 등록이 완료되었습니다.");
 
                 Product updatedProduct =
                         stockService.FindProductById(
@@ -765,17 +625,10 @@ public class StockMenu {
 
                 if (updatedProduct != null) {
 
-                    System.out.println(
-                            "현재 재고: "
-                                    + updatedProduct
-                                    .getStockQuantity()
-                    );
+                    ConsoleUi.Info("현재 재고: " + updatedProduct .getStockQuantity());
                 }
 
-                System.out.print(
-                        "시리얼을 계속 등록하시겠습니까? "
-                                + "(Y/N) > "
-                );
+                ConsoleUi.Prompt("시리얼을 계속 등록하시겠습니까? (Y/N)");
 
                 String continueInput =
                         scanner.nextLine()
@@ -788,28 +641,26 @@ public class StockMenu {
 
             } catch (Exception e) {
 
-                System.out.println(
-                        "시리얼 등록 실패: "
-                                + e.getMessage()
-                );
+                ConsoleUi.Error("시리얼 등록 실패: " + e.getMessage());
             }
         }
     }
 
     private void RunAdjustmentHistoryMenu() {
         while (true) {
-            System.out.println();
-            System.out.println("========================================");
-            System.out.println("             재고 변경 이력");
-            System.out.println("========================================");
-            System.out.println("1. 전체 변경 이력");
-            System.out.println("2. 상품별 변경 이력");
-            System.out.println("3. 기간별 변경 이력");
-            System.out.println("0. 이전");
-            System.out.println("----------------------------------------");
-            System.out.print("선택 > ");
+            ConsoleUi.ClearScreen();
+            ConsoleUi.ScreenHeader("STOCK / HISTORY", "재고 변경 이력");
+            ConsoleUi.Section("변경 이력");
+            ConsoleUi.MenuItem("01", "전체 변경 이력");
+            ConsoleUi.MenuItem("02", "상품별 변경 이력");
+            ConsoleUi.MenuItem("03", "기간별 변경 이력");
+            ConsoleUi.MenuItem("00", "이전");
 
-            String input = scanner.nextLine().trim();
+            System.out.println();
+            ConsoleUi.Divider(40);
+            ConsoleUi.Prompt("선택");
+
+            String input = ConsoleUi.Choice(scanner.nextLine());
 
             switch (input) {
                 case "1":
@@ -824,7 +675,8 @@ public class StockMenu {
                 case "0":
                     return;
                 default:
-                    System.out.println("올바른 메뉴 번호를 입력해 주세요.");
+                    ConsoleUi.InvalidMenu();
+                    ConsoleUi.PressEnter(scanner);
             }
         }
     }
@@ -835,24 +687,24 @@ public class StockMenu {
                     stockService.FindAllAdjustmentHistory();
 
             System.out.println();
-            System.out.println("================ 전체 재고 변경 이력 ================");
+            ConsoleUi.Info("================ 전체 재고 변경 이력 ================");
             PrintAdjustmentHistory(histories);
 
         } catch (Exception e) {
-            System.out.println("재고 변경 이력 조회 실패: " + e.getMessage());
+            ConsoleUi.Error("재고 변경 이력 조회 실패: " + e.getMessage());
         }
     }
 
     private void ShowAdjustmentHistoryByProduct() {
-        System.out.print("상품 ID > ");
-        String input = scanner.nextLine().trim();
+        ConsoleUi.Prompt("상품 ID");
+        String input = ConsoleUi.Choice(scanner.nextLine());
 
         try {
             Long productId = Long.parseLong(input);
 
             Product product = stockService.FindProductById(productId);
             if (product == null) {
-                System.out.println("존재하지 않는 상품입니다.");
+                ConsoleUi.Info("존재하지 않는 상품입니다.");
                 return;
             }
 
@@ -860,22 +712,22 @@ public class StockMenu {
                     stockService.FindAdjustmentHistoryByProduct(productId);
 
             System.out.println();
-            System.out.println("상품: " + product.getProductName());
-            System.out.println("================ 상품별 재고 변경 이력 ================");
+            ConsoleUi.Info("상품: " + product.getProductName());
+            ConsoleUi.Info("================ 상품별 재고 변경 이력 ================");
             PrintAdjustmentHistory(histories);
 
         } catch (NumberFormatException e) {
-            System.out.println("상품 ID는 숫자로 입력해 주세요.");
+            ConsoleUi.Error("상품 ID는 숫자로 입력해 주세요.");
         } catch (Exception e) {
-            System.out.println("재고 변경 이력 조회 실패: " + e.getMessage());
+            ConsoleUi.Error("재고 변경 이력 조회 실패: " + e.getMessage());
         }
     }
 
     private void ShowAdjustmentHistoryByPeriod() {
-        System.out.print("시작일 (YYYY-MM-DD) > ");
+        ConsoleUi.Prompt("시작일 (YYYY-MM-DD)");
         String startInput = scanner.nextLine().trim();
 
-        System.out.print("종료일 (YYYY-MM-DD) > ");
+        ConsoleUi.Prompt("종료일 (YYYY-MM-DD)");
         String endInput = scanner.nextLine().trim();
 
         try {
@@ -886,53 +738,63 @@ public class StockMenu {
                     stockService.FindAdjustmentHistoryByPeriod(startDate, endDate);
 
             System.out.println();
-            System.out.println(startDate + " ~ " + endDate);
-            System.out.println("================ 기간별 재고 변경 이력 ================");
+            ConsoleUi.Field("조회 기간", startDate + " ~ " + endDate, 12);
+            ConsoleUi.Info("================ 기간별 재고 변경 이력 ================");
             PrintAdjustmentHistory(histories);
 
         } catch (DateTimeParseException e) {
-            System.out.println("날짜는 YYYY-MM-DD 형식으로 입력해 주세요.");
+            ConsoleUi.Error("날짜는 YYYY-MM-DD 형식으로 입력해 주세요.");
         } catch (Exception e) {
-            System.out.println("재고 변경 이력 조회 실패: " + e.getMessage());
+            ConsoleUi.Error("재고 변경 이력 조회 실패: " + e.getMessage());
         }
     }
 
     private void PrintAdjustmentHistory(List<StockAdjustmentHistory> histories) {
         if (histories == null || histories.isEmpty()) {
-            System.out.println("조회된 재고 변경 이력이 없습니다.");
+            ConsoleUi.Error("조회된 재고 변경 이력이 없습니다.");
             return;
         }
 
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
-        System.out.printf(
-                "%-18s %-12s %-18s %-8s %-20s %-25s%n",
-                "변경일시", "상품코드", "상품명", "변경량", "사유", "관리자"
+        System.out.println();
+        System.out.println(
+                ConsoleUi.Cyan(
+                        ConsoleUi.PadRight("변경일시", 18)
+                                + ConsoleUi.PadRight("상품코드", 12)
+                                + ConsoleUi.PadRight("상품명", 20)
+                                + ConsoleUi.PadLeft("변경량", 8)
+                                + "  " + ConsoleUi.PadRight("사유", 20)
+                                + ConsoleUi.PadRight("관리자", 24)
+                )
         );
 
-        System.out.println(
-                "------------------------------------------------------------------------------------------------"
-        );
+        ConsoleUi.Divider(HISTORY_TABLE_WIDTH);
 
         for (StockAdjustmentHistory history : histories) {
             String admin = history.getAdjustedByEmail() != null
                     ? history.getAdjustedByEmail()
                     : "알 수 없음";
 
+            // 입고(+)는 GREEN, 차감(-)은 YELLOW로 구분한다
             String delta = history.getQuantityDelta() > 0
-                    ? "+" + history.getQuantityDelta()
-                    : String.valueOf(history.getQuantityDelta());
+                    ? ConsoleUi.Green("+" + history.getQuantityDelta())
+                    : ConsoleUi.Yellow(String.valueOf(history.getQuantityDelta()));
 
-            System.out.printf(
-                    "%-18s %-12s %-18s %-8s %-20s %-25s%n",
-                    history.getAdjustedAt().format(formatter),
-                    history.getProductCode(),
-                    history.getProductName(),
-                    delta,
-                    history.getReason(),
-                    admin
+            System.out.println(
+                    ConsoleUi.PadRight(history.getAdjustedAt().format(formatter), 18)
+                            + ConsoleUi.PadRight(history.getProductCode(), 12)
+                            + ConsoleUi.PadRight(
+                                    ConsoleUi.Truncate(history.getProductName(), 19), 20)
+                            + ConsoleUi.PadLeft(delta, 8)
+                            + "  " + ConsoleUi.PadRight(
+                                    ConsoleUi.Truncate(history.getReason(), 19), 20)
+                            + ConsoleUi.PadRight(
+                                    ConsoleUi.Truncate(admin, 23), 24)
             );
         }
+
+        ConsoleUi.Divider(HISTORY_TABLE_WIDTH);
     }
 
     // ============================================================
@@ -946,27 +808,26 @@ public class StockMenu {
         if (products == null ||
                 products.isEmpty()) {
 
-            System.out.println(
-                    "조회된 상품이 없습니다."
-            );
+            System.out.println();
+            ConsoleUi.Warn("조회된 상품이 없습니다.");
 
             return;
         }
 
-        System.out.printf(
-                "%-6s %-14s %-20s %-10s %-10s %-8s %-8s%n",
-                "ID",
-                "상품코드",
-                "상품명",
-                "현재재고",
-                "안전재고",
-                "상태",
-                "시리얼"
+        System.out.println();
+        System.out.println(
+                ConsoleUi.Cyan(
+                        ConsoleUi.PadRight("ID", 6)
+                                + ConsoleUi.PadRight("상품코드", 14)
+                                + ConsoleUi.PadRight("상품명", 20)
+                                + ConsoleUi.PadLeft("현재재고", 10)
+                                + ConsoleUi.PadLeft("안전재고", 10)
+                                + "  " + ConsoleUi.PadRight("상태", 10)
+                                + ConsoleUi.PadRight("시리얼", 8)
+                )
         );
 
-        System.out.println(
-                "--------------------------------------------------------------------------"
-        );
+        ConsoleUi.Divider(STOCK_TABLE_WIDTH);
 
 
         for (Product product : products) {
@@ -982,18 +843,22 @@ public class StockMenu {
                             ? "Y"
                             : "N";
 
-            System.out.printf(
-                    "%-6d %-14s %-20s %-10d %-10d %-8s %-8s%n",
-
-                    product.getProductId(),
-                    product.getProductCode(),
-                    product.getProductName(),
-                    product.getStockQuantity(),
-                    product.getReorderLevel(),
-                    stockStatus,
-                    serialStatus
+            System.out.println(
+                    ConsoleUi.PadRight(String.valueOf(product.getProductId()), 6)
+                            + ConsoleUi.PadRight(product.getProductCode(), 14)
+                            + ConsoleUi.PadRight(
+                                    ConsoleUi.Truncate(product.getProductName(), 19), 20)
+                            + ConsoleUi.PadLeft(
+                                    ConsoleUi.Stock(product.getStockQuantity(),
+                                            product.getReorderLevel()), 10)
+                            + ConsoleUi.PadLeft(
+                                    String.valueOf(product.getReorderLevel()), 10)
+                            + "  " + ConsoleUi.PadRight(stockStatus, 10)
+                            + ConsoleUi.PadRight(serialStatus, 8)
             );
         }
+
+        ConsoleUi.Divider(STOCK_TABLE_WIDTH);
     }
 
     // ============================================================
@@ -1004,24 +869,30 @@ public class StockMenu {
             List<SerialStockConsistency> results =
                     stockService.CheckSerialStockConsistency();
 
-            System.out.println();
-            System.out.println("================================================================================");
-            System.out.println("                         시리얼 상품 재고 정합성 검사");
-            System.out.println("================================================================================");
+            ConsoleUi.ClearScreen();
+            ConsoleUi.ScreenHeader("ADMIN", "시리얼 상품 재고 정합성 검사");
 
             if (results == null || results.isEmpty()) {
-                System.out.println("시리얼 관리 상품이 없습니다.");
+                System.out.println();
+                ConsoleUi.Warn("시리얼 관리 상품이 없습니다.");
+                ConsoleUi.PressEnter(scanner);
                 return;
             }
 
-            System.out.printf(
-                    "%-6s %-14s %-20s %-10s %-12s %-8s %-8s%n",
-                    "ID", "상품코드", "상품명", "DB재고", "AVAILABLE", "차이", "결과"
+            System.out.println();
+            System.out.println(
+                    ConsoleUi.Cyan(
+                            ConsoleUi.PadRight("ID", 6)
+                                    + ConsoleUi.PadRight("상품코드", 14)
+                                    + ConsoleUi.PadRight("상품명", 20)
+                                    + ConsoleUi.PadLeft("DB재고", 10)
+                                    + ConsoleUi.PadLeft("AVAILABLE", 12)
+                                    + ConsoleUi.PadLeft("차이", 8)
+                                    + "  " + ConsoleUi.PadRight("결과", 8)
+                    )
             );
 
-            System.out.println(
-                    "--------------------------------------------------------------------------------"
-            );
+            ConsoleUi.Divider(CHECK_TABLE_WIDTH);
 
             int normalCount = 0;
             int errorCount = 0;
@@ -1035,39 +906,38 @@ public class StockMenu {
                     errorCount++;
                 }
 
-                String status = consistent ? "정상" : "불일치";
+                String status = consistent
+                        ? ConsoleUi.Green("정상")
+                        : ConsoleUi.Red("불일치");
 
-                System.out.printf(
-                        "%-6d %-14s %-20s %-10d %-12d %-8d %-8s%n",
-                        result.getProductId(),
-                        result.getProductCode(),
-                        result.getProductName(),
-                        result.getStockQuantity(),
-                        result.getAvailableUnitCount(),
-                        result.GetDifference(),
-                        status
+                System.out.println(
+                        ConsoleUi.PadRight(String.valueOf(result.getProductId()), 6)
+                                + ConsoleUi.PadRight(result.getProductCode(), 14)
+                                + ConsoleUi.PadRight(
+                                        ConsoleUi.Truncate(result.getProductName(), 19), 20)
+                                + ConsoleUi.PadLeft(
+                                        String.valueOf(result.getStockQuantity()), 10)
+                                + ConsoleUi.PadLeft(
+                                        String.valueOf(result.getAvailableUnitCount()), 12)
+                                + ConsoleUi.PadLeft(
+                                        String.valueOf(result.GetDifference()), 8)
+                                + "  " + ConsoleUi.PadRight(status, 8)
                 );
             }
 
-            System.out.println(
-                    "--------------------------------------------------------------------------------"
-            );
+            ConsoleUi.Divider(CHECK_TABLE_WIDTH);
 
-            System.out.println(
-                    "검사 결과: 전체 " + results.size()
-                            + "개 / 정상 " + normalCount
-                            + "개 / 불일치 " + errorCount + "개"
-            );
+            ConsoleUi.Info("검사 결과: 전체 " + results.size() + "개 / 정상 " + normalCount + "개 / 불일치 " + errorCount + "개");
 
             if (errorCount > 0) {
-                System.out.println(
-                        "※ 불일치 상품은 DB 재고와 AVAILABLE 시리얼 수를 확인해 주세요."
-                );
+                ConsoleUi.Error("※ 불일치 상품은 DB 재고와 AVAILABLE 시리얼 수를 확인해 주세요.");
             }
 
         } catch (Exception e) {
-            System.out.println("재고 정합성 검사 실패: " + e.getMessage());
+            ConsoleUi.Error("재고 정합성 검사에 실패했습니다. " + e.getMessage());
         }
+
+        ConsoleUi.PressEnter(scanner);
     }
 
 
@@ -1083,9 +953,7 @@ public class StockMenu {
 
             try {
 
-                System.out.print(
-                        message
-                );
+                ConsoleUi.Prompt(message);
 
                 return Long.parseLong(
                         scanner.nextLine().trim()
@@ -1093,9 +961,7 @@ public class StockMenu {
 
             } catch (NumberFormatException e) {
 
-                System.out.println(
-                        "숫자를 입력해 주세요."
-                );
+                ConsoleUi.Error("숫자를 입력해 주세요.");
             }
         }
     }
@@ -1109,9 +975,7 @@ public class StockMenu {
 
             try {
 
-                System.out.print(
-                        message
-                );
+                ConsoleUi.Prompt(message);
 
                 return Integer.parseInt(
                         scanner.nextLine().trim()
@@ -1119,9 +983,7 @@ public class StockMenu {
 
             } catch (NumberFormatException e) {
 
-                System.out.println(
-                        "숫자를 입력해 주세요."
-                );
+                ConsoleUi.Error("숫자를 입력해 주세요.");
             }
         }
     }
@@ -1133,9 +995,7 @@ public class StockMenu {
 
         while (true) {
 
-            System.out.print(
-                    message
-            );
+            ConsoleUi.Prompt(message);
 
             String value =
                     scanner.nextLine()
@@ -1148,9 +1008,7 @@ public class StockMenu {
             }
 
 
-            System.out.println(
-                    "값을 입력해 주세요."
-            );
+            ConsoleUi.Error("값을 입력해 주세요.");
         }
     }
 

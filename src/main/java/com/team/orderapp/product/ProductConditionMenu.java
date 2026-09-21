@@ -1,5 +1,7 @@
 package com.team.orderapp.product;
 
+import com.team.orderapp.common.ConsoleUi;
+
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Scanner;
@@ -18,6 +20,9 @@ import java.util.Scanner;
  * ProductMenu에서 처리합니다.
  */
 public class ProductConditionMenu {
+
+    // 연속 입력 화면에서 필드 이름 칸의 너비 (계획서 7장)
+    private static final int PROMPT_WIDTH = 16;
 
     private final Scanner scanner;
     private final ProductService productService;
@@ -47,7 +52,7 @@ public class ProductConditionMenu {
 
             PrintMenu();
 
-            String input = scanner.nextLine().trim();
+            String input = ConsoleUi.Choice(scanner.nextLine());
 
             switch (input) {
 
@@ -72,9 +77,8 @@ public class ProductConditionMenu {
                     return null;
 
                 default:
-                    System.out.println(
-                            "올바른 메뉴 번호를 입력해주세요."
-                    );
+                    ConsoleUi.InvalidMenu();
+                    ConsoleUi.PressEnter(scanner);
             }
         }
     }
@@ -87,7 +91,7 @@ public class ProductConditionMenu {
     private List<Product> FindByCategory() {
 
         long categoryId =
-                ReadLong("카테고리 번호 > ");
+                ReadLong("카테고리 번호");
 
         return productService
                 .FindProductsByCategoryId(categoryId);
@@ -101,10 +105,10 @@ public class ProductConditionMenu {
     private List<Product> FindByPriceRange() {
 
         BigDecimal minPrice =
-                ReadPrice("최소 가격 > ");
+                ReadPrice("최소 가격");
 
         BigDecimal maxPrice =
-                ReadPrice("최대 가격 > ");
+                ReadPrice("최대 가격");
 
         return productService.FindByPriceRange(
                 minPrice,
@@ -120,13 +124,13 @@ public class ProductConditionMenu {
     private List<Product> FindByCategoryAndPriceRange() {
 
         long categoryId =
-                ReadLong("카테고리 번호 > ");
+                ReadLong("카테고리 번호");
 
         BigDecimal minPrice =
-                ReadPrice("최소 가격 > ");
+                ReadPrice("최소 가격");
 
         BigDecimal maxPrice =
-                ReadPrice("최대 가격 > ");
+                ReadPrice("최대 가격");
 
         return productService
                 .FindByCategoryAndPriceRange(
@@ -141,7 +145,7 @@ public class ProductConditionMenu {
      */
     private List<Product> FindByProductName() {
 
-        System.out.print("검색할 상품명 > ");
+        ConsoleUi.Prompt("검색할 상품명", PROMPT_WIDTH);
 
         String keyword =
                 scanner.nextLine().trim();
@@ -155,17 +159,18 @@ public class ProductConditionMenu {
      */
     private void PrintMenu() {
 
+        ConsoleUi.ClearScreen();
+        ConsoleUi.ScreenHeader("PRODUCT / SEARCH", "상품 조건 검색");
+
+        ConsoleUi.Section("검색 조건");
+        ConsoleUi.MenuItem("01", "카테고리로 조회");
+        ConsoleUi.MenuItem("02", "가격 범위로 조회");
+        ConsoleUi.MenuItem("03", "카테고리 + 가격으로 조회");
+        ConsoleUi.MenuItem("04", "상품명으로 검색");
+        ConsoleUi.MenuItem("00", "이전");
+
         System.out.println();
-        System.out.println("========================================");
-        System.out.println("              상품 조건 조회");
-        System.out.println("========================================");
-        System.out.println("1. 카테고리로 조회");
-        System.out.println("2. 가격 범위로 조회");
-        System.out.println("3. 카테고리 + 가격으로 조회");
-        System.out.println("4. 상품명으로 검색");
-        System.out.println("0. 이전");
-        System.out.println("----------------------------------------");
-        System.out.print("선택 > ");
+        ConsoleUi.Prompt("선택");
     }
 
 
@@ -176,7 +181,7 @@ public class ProductConditionMenu {
 
         while (true) {
 
-            System.out.print(message);
+            ConsoleUi.Prompt(message, PROMPT_WIDTH);
             String input = scanner.nextLine().trim();
 
             try {
@@ -185,18 +190,14 @@ public class ProductConditionMenu {
 
                 // 카테고리 ID는 1 이상이어야 함
                 if (value <= 0) {
-                    System.out.println(
-                            "0보다 큰 번호를 입력해주세요."
-                    );
+                    ConsoleUi.Error("0보다 큰 번호를 입력해 주세요.");
                     continue;
                 }
 
                 return value;
 
             } catch (NumberFormatException e) {
-                System.out.println(
-                        "숫자로 입력해주세요."
-                );
+                ConsoleUi.Error("올바른 값을 입력해 주세요.");
             }
         }
     }
@@ -208,7 +209,7 @@ public class ProductConditionMenu {
 
         while (true) {
 
-            System.out.print(message);
+            ConsoleUi.Prompt(message, PROMPT_WIDTH);
             String input = scanner.nextLine().trim();
 
             try {
@@ -220,18 +221,14 @@ public class ProductConditionMenu {
                         BigDecimal.ZERO
                 ) < 0) {
 
-                    System.out.println(
-                            "가격은 0원 이상이어야 합니다."
-                    );
+                    ConsoleUi.Error("가격은 0원 이상이어야 합니다.");
                     continue;
                 }
 
                 return price;
 
             } catch (NumberFormatException e) {
-                System.out.println(
-                        "가격은 숫자로 입력해주세요."
-                );
+                ConsoleUi.Error("가격은 숫자로 입력해 주세요.");
             }
         }
     }

@@ -1,12 +1,11 @@
 package com.team.orderapp.cart;
 
 import com.team.orderapp.auth.LoginSession;
+import com.team.orderapp.common.ConsoleUi;
 import com.team.orderapp.order.command.OrderCommandService;
 
 import java.math.BigDecimal;
-import java.text.NumberFormat;
 import java.util.List;
-import java.util.Locale;
 import java.util.Scanner;
 
 /**
@@ -18,18 +17,15 @@ public class CartMenu {
 
     // 표 열 너비 (한글은 2칸으로 계산)
     private static final int COL_NO = 6;
-    private static final int COL_NAME = 18;
+    private static final int COL_NAME = 20;
     private static final int COL_PRICE = 10;
     private static final int COL_QUANTITY = 6;
-    private static final int COL_AMOUNT = 10;
+    private static final int COL_AMOUNT = 12;
     private static final int TABLE_WIDTH =
             COL_NO + COL_NAME + COL_PRICE + COL_QUANTITY + COL_AMOUNT;
 
     private final Scanner scanner;
     private final CartService cartService;
-
-    private final NumberFormat moneyFormat =
-            NumberFormat.getNumberInstance(Locale.KOREA);
 
     /**
      * 장바구니 화면을 생성합니다.
@@ -67,17 +63,18 @@ public class CartMenu {
             if (items.isEmpty()) {
                 PrintEmptyMenu();
 
-                if (scanner.nextLine().trim().equals("0")) {
+                if (ConsoleUi.Choice(scanner.nextLine()).equals("0")) {
                     return;
                 }
 
-                System.out.println("올바른 메뉴 번호를 입력해 주세요.");
+                ConsoleUi.InvalidMenu();
+                ConsoleUi.PressEnter(scanner);
                 continue;
             }
 
             PrintMenu();
 
-            String input = scanner.nextLine().trim();
+            String input = ConsoleUi.Choice(scanner.nextLine());
 
             try {
 
@@ -103,11 +100,13 @@ public class CartMenu {
                         return;
 
                     default:
-                        System.out.println("올바른 메뉴 번호를 입력해 주세요.");
+                        ConsoleUi.InvalidMenu();
+                        ConsoleUi.PressEnter(scanner);
                 }
 
             } catch (RuntimeException e) {
                 PrintError(e);
+                ConsoleUi.PressEnter(scanner);
             }
         }
     }
@@ -122,28 +121,31 @@ public class CartMenu {
      */
     private void ChangeQuantity(List<CartItem> items) {
 
-        CartItem target = ReadItem(items, "수량을 변경할 품목 번호 (0: 취소) > ");
+        CartItem target = ReadItem(items, "수량을 변경할 품목 번호 (0: 취소)");
 
         if (target == null) {
             return;
         }
 
-        int quantity = ReadNonNegativeInt("새 수량 (0: 삭제) > ");
+        int quantity = ReadNonNegativeInt("새 수량 (0: 삭제)");
 
         if (quantity == 0) {
 
-            if (!ReadYesNo(target.getProductName() + "을(를) 장바구니에서 삭제하시겠습니까? (Y/N) > ")) {
-                System.out.println("취소했습니다.");
+            if (!ReadYesNo(target.getProductName() + "을(를) 장바구니에서 삭제하시겠습니까?")) {
+                ConsoleUi.Cancelled();
+                ConsoleUi.PressEnter(scanner);
                 return;
             }
 
             cartService.RemoveItem(target.getCartItemId());
-            System.out.println("품목을 삭제했습니다.");
+            ConsoleUi.Success("품목을 삭제했습니다.");
+            ConsoleUi.PressEnter(scanner);
             return;
         }
 
         cartService.ChangeQuantity(target.getCartItemId(), quantity);
-        System.out.println("수량을 " + quantity + "개로 변경했습니다.");
+        ConsoleUi.Success("수량을 " + quantity + "개로 변경했습니다.");
+        ConsoleUi.PressEnter(scanner);
     }
 
 
@@ -156,19 +158,21 @@ public class CartMenu {
      */
     private void RemoveItem(List<CartItem> items) {
 
-        CartItem target = ReadItem(items, "삭제할 품목 번호 (0: 취소) > ");
+        CartItem target = ReadItem(items, "삭제할 품목 번호 (0: 취소)");
 
         if (target == null) {
             return;
         }
 
-        if (!ReadYesNo(target.getProductName() + "을(를) 장바구니에서 삭제하시겠습니까? (Y/N) > ")) {
-            System.out.println("취소했습니다.");
+        if (!ReadYesNo(target.getProductName() + "을(를) 장바구니에서 삭제하시겠습니까?")) {
+            ConsoleUi.Cancelled();
+            ConsoleUi.PressEnter(scanner);
             return;
         }
 
         cartService.RemoveItem(target.getCartItemId());
-        System.out.println("품목을 삭제했습니다.");
+        ConsoleUi.Success("품목을 삭제했습니다.");
+        ConsoleUi.PressEnter(scanner);
     }
 
 
@@ -181,13 +185,17 @@ public class CartMenu {
      */
     private void ClearCart() {
 
-        if (!ReadYesNo("장바구니를 모두 비우시겠습니까? (Y/N) > ")) {
-            System.out.println("취소했습니다.");
+        ConsoleUi.Warn("장바구니를 모두 비우면 되돌릴 수 없습니다.");
+
+        if (!ReadYesNo("장바구니를 모두 비우시겠습니까?")) {
+            ConsoleUi.Cancelled();
+            ConsoleUi.PressEnter(scanner);
             return;
         }
 
         cartService.ClearCart();
-        System.out.println("장바구니를 비웠습니다.");
+        ConsoleUi.Success("장바구니를 비웠습니다.");
+        ConsoleUi.PressEnter(scanner);
     }
 
 
@@ -208,10 +216,19 @@ public class CartMenu {
 
         List<CartItem> items = cartService.GetItems();
 
-        String total = FormatMoney(cartService.CalculateTotalAmount(items)) + "원";
+        if (items.isEmpty()) {
+            ConsoleUi.Warn("장바구니가 비어있습니다.");
+            ConsoleUi.PressEnter(scanner);
+            return;
+        }
 
-        if (!ReadYesNo("총 " + total + "을 결제합니다. 주문하시겠습니까? (Y/N) > ")) {
-            System.out.println("취소했습니다.");
+        BigDecimal total = cartService.CalculateTotalAmount(items);
+
+        PrintCheckout(items, total);
+
+        if (!ReadYesNo("주문하시겠습니까?")) {
+            ConsoleUi.Cancelled();
+            ConsoleUi.PressEnter(scanner);
             return;
         }
 
@@ -219,13 +236,79 @@ public class CartMenu {
         String orderNo = new OrderCommandService()
                 .Checkout(LoginSession.getCustomerId());
 
+        PrintOrderComplete(orderNo, total);
+    }
+
+
+    /**
+     * 주문 확인 화면을 출력하는 헬퍼 메서드입니다.
+     */
+    private void PrintCheckout(List<CartItem> items, BigDecimal total) {
+
+        ConsoleUi.ClearScreen();
+        ConsoleUi.ScreenHeader("CHECKOUT", "주문 확인");
+
         System.out.println();
-        System.out.println("주문이 완료되었습니다.");
-        System.out.println("주문번호: " + orderNo);
+
+        int totalQuantity = 0;
+
+        for (CartItem item : items) {
+
+            totalQuantity += item.getQuantity();
+
+            String line = ConsoleUi.Truncate(item.getProductName(), COL_NAME - 1)
+                    + "  " + ConsoleUi.Money(item.getPrice()) + "원"
+                    + " × " + item.getQuantity();
+
+            System.out.println(
+                    ConsoleUi.INDENT
+                            + ConsoleUi.PadRight(line, TABLE_WIDTH - 14)
+                            + ConsoleUi.PadLeft(ConsoleUi.Money(item.getSubTotal()) + "원", 12)
+            );
+        }
+
+        ConsoleUi.Divider(TABLE_WIDTH);
+        System.out.println(
+                ConsoleUi.INDENT
+                        + ConsoleUi.PadRight("총 수량", TABLE_WIDTH - 14)
+                        + ConsoleUi.PadLeft(ConsoleUi.Yellow(String.valueOf(totalQuantity)), 12)
+        );
+        System.out.println(
+                ConsoleUi.INDENT
+                        + ConsoleUi.PadRight("주문 금액", TABLE_WIDTH - 14)
+                        + ConsoleUi.PadLeft(ConsoleUi.Amount(total), 12)
+        );
+        ConsoleUi.Divider(TABLE_WIDTH);
+
+        System.out.println();
+        ConsoleUi.Warn("구매 시점의 최신 가격·재고로 다시 계산되므로 금액이 달라질 수 있습니다.");
+        System.out.println();
+        ConsoleUi.YesNoOptions("주문 확정", "취소");
+        System.out.println();
+    }
+
+
+    /**
+     * 주문 완료 화면을 출력하는 헬퍼 메서드입니다.
+     */
+    private void PrintOrderComplete(String orderNo, BigDecimal total) {
+
+        ConsoleUi.ClearScreen();
+        ConsoleUi.CompleteBox(
+                "ORDER COMPLETE",
+                "주문 완료",
+                ConsoleUi.InfoLine("주문번호", ConsoleUi.Cyan(orderNo)),
+                ConsoleUi.InfoLine("주문금액", ConsoleUi.Amount(total))
+        );
+
+        System.out.println();
+        ConsoleUi.Success("주문이 정상적으로 완료되었습니다.");
 
         if (!LoginSession.IsLoggedIn()) {
-            System.out.println("비회원 주문은 주문번호로만 조회·반품할 수 있으니 꼭 기록해 주세요.");
+            ConsoleUi.Warn("비회원은 주문 조회·반품에 주문번호가 필요하니 반드시 보관해 주세요.");
         }
+
+        ConsoleUi.PressEnter(scanner);
     }
 
 
@@ -243,42 +326,55 @@ public class CartMenu {
             totalQuantity += item.getQuantity();
         }
 
-        System.out.println();
-        System.out.println("========================================");
-        System.out.println("               장바구니(" + totalQuantity + ")");
-        System.out.println("========================================");
+        BigDecimal total = items.isEmpty()
+                ? BigDecimal.ZERO
+                : cartService.CalculateTotalAmount(items);
+
+        ConsoleUi.ClearScreen();
+        ConsoleUi.ScreenHeader(
+                "CART",
+                "총 수량 " + ConsoleUi.Yellow(String.valueOf(totalQuantity)),
+                ConsoleUi.Amount(total)
+        );
 
         if (items.isEmpty()) {
-            System.out.println("장바구니가 비어 있습니다.");
+            System.out.println();
+            ConsoleUi.Warn("장바구니가 비어있습니다.");
             return;
         }
 
+        System.out.println();
         System.out.println(
-                PadRight("번호", COL_NO)
-                        + PadRight("상품명", COL_NAME)
-                        + PadLeft("단가", COL_PRICE)
-                        + PadLeft("수량", COL_QUANTITY)
-                        + PadLeft("금액", COL_AMOUNT)
+                ConsoleUi.Cyan(
+                        ConsoleUi.PadRight("번호", COL_NO)
+                                + ConsoleUi.PadRight("상품명", COL_NAME)
+                                + ConsoleUi.PadLeft("단가", COL_PRICE)
+                                + ConsoleUi.PadLeft("수량", COL_QUANTITY)
+                                + ConsoleUi.PadLeft("금액", COL_AMOUNT)
+                )
         );
-        System.out.println("-".repeat(TABLE_WIDTH));
+        ConsoleUi.Divider(TABLE_WIDTH);
 
         for (int i = 0; i < items.size(); i++) {
 
             CartItem item = items.get(i);
 
             System.out.println(
-                    PadRight(String.valueOf(i + 1), COL_NO)
-                            + PadRight(Truncate(item.getProductName(), COL_NAME - 1), COL_NAME)
-                            + PadLeft(FormatMoney(item.getPrice()), COL_PRICE)
-                            + PadLeft(String.valueOf(item.getQuantity()), COL_QUANTITY)
-                            + PadLeft(FormatMoney(item.getSubTotal()), COL_AMOUNT)
+                    ConsoleUi.PadRight(String.format("%02d", i + 1), COL_NO)
+                            + ConsoleUi.PadRight(
+                                    ConsoleUi.Truncate(item.getProductName(), COL_NAME - 1),
+                                    COL_NAME)
+                            + ConsoleUi.PadLeft(ConsoleUi.Money(item.getPrice()), COL_PRICE)
+                            + ConsoleUi.PadLeft(String.valueOf(item.getQuantity()), COL_QUANTITY)
+                            + ConsoleUi.PadLeft(ConsoleUi.Money(item.getSubTotal()), COL_AMOUNT)
             );
         }
 
-        System.out.println("-".repeat(TABLE_WIDTH));
+        ConsoleUi.Divider(TABLE_WIDTH);
 
-        String total = FormatMoney(cartService.CalculateTotalAmount(items)) + "원";
-        System.out.println("합계" + PadLeft(total, TABLE_WIDTH - DisplayWidth("합계")));
+        System.out.println(
+                ConsoleUi.PadLeft("합계 " + ConsoleUi.Amount(total), TABLE_WIDTH)
+        );
     }
 
 
@@ -288,13 +384,14 @@ public class CartMenu {
     private void PrintMenu() {
 
         System.out.println();
-        System.out.println("1. 수량 변경");
-        System.out.println("2. 품목 삭제");
-        System.out.println("3. 전체 비우기");
-        System.out.println("4. 구매");
-        System.out.println("0. 이전");
-        System.out.println("----------------------------------------");
-        System.out.print("선택 > ");
+        ConsoleUi.Option("1", "수량 변경");
+        ConsoleUi.Option("2", "품목 삭제");
+        ConsoleUi.Option("3", "전체 비우기");
+        System.out.println();
+        ConsoleUi.Option("4", "구매하기");
+        ConsoleUi.Option("0", "이전");
+        System.out.println();
+        ConsoleUi.Prompt("선택");
     }
 
 
@@ -304,9 +401,9 @@ public class CartMenu {
     private void PrintEmptyMenu() {
 
         System.out.println();
-        System.out.println("0. 이전");
-        System.out.println("----------------------------------------");
-        System.out.print("선택 > ");
+        ConsoleUi.Option("0", "이전");
+        System.out.println();
+        ConsoleUi.Prompt("선택");
     }
 
 
@@ -318,11 +415,11 @@ public class CartMenu {
     private void PrintError(RuntimeException e) {
 
         if (e instanceof IllegalArgumentException) {
-            System.out.println("[오류] " + e.getMessage());
+            ConsoleUi.Error(e.getMessage());
             return;
         }
 
-        System.out.println("[오류] 장바구니 처리 중 문제가 발생했습니다. 잠시 후 다시 시도해 주세요.");
+        ConsoleUi.Error("장바구니 처리 중 문제가 발생했습니다. 잠시 후 다시 시도해 주세요.");
     }
 
 
@@ -349,7 +446,7 @@ public class CartMenu {
                 return items.get(number - 1);
             }
 
-            System.out.println("1 ~ " + items.size() + " 사이의 번호를 입력해 주세요.");
+            ConsoleUi.Error("1 ~ " + items.size() + " 사이의 번호를 입력해 주세요.");
         }
     }
 
@@ -361,7 +458,7 @@ public class CartMenu {
 
         while (true) {
 
-            System.out.print(message);
+            ConsoleUi.Prompt(message);
 
             try {
                 int value = Integer.parseInt(scanner.nextLine().trim());
@@ -374,7 +471,7 @@ public class CartMenu {
                 // 아래 안내 문구로 재입력
             }
 
-            System.out.println("0 이상의 숫자를 입력해 주세요.");
+            ConsoleUi.Error("0 이상의 숫자를 입력해 주세요.");
         }
     }
 
@@ -388,7 +485,7 @@ public class CartMenu {
 
         while (true) {
 
-            System.out.print(message);
+            ConsoleUi.Prompt(message + " (Y/N)");
 
             String input = scanner.nextLine().trim().toUpperCase();
 
@@ -400,90 +497,7 @@ public class CartMenu {
                 return false;
             }
 
-            System.out.println("Y 또는 N을 입력해 주세요.");
+            ConsoleUi.Error("Y 또는 N을 입력해 주세요.");
         }
-    }
-
-
-    // ============================================================
-    // 표 정렬 Helper
-    // ============================================================
-
-    /**
-     * 금액을 천 단위 콤마 형식(예: 14,000)으로 바꾸는 헬퍼 메서드입니다.
-     */
-    private String FormatMoney(BigDecimal amount) {
-        return moneyFormat.format(amount);
-    }
-
-
-    /**
-     * 터미널에서 차지하는 칸 수를 계산하는 헬퍼 메서드입니다. 한글은 2칸, 나머지는 1칸입니다.
-     */
-    private int DisplayWidth(String text) {
-
-        int width = 0;
-
-        for (char c : text.toCharArray()) {
-            width += IsWide(c) ? 2 : 1;
-        }
-
-        return width;
-    }
-
-
-    /**
-     * 한글처럼 터미널에서 2칸을 차지하는 문자인지 확인하는 헬퍼 메서드입니다.
-     */
-    private boolean IsWide(char c) {
-        return (c >= '가' && c <= '힣')   // 한글 음절
-                || (c >= 'ᄀ' && c <= 'ᇿ')  // 한글 자모
-                || (c >= '㄰' && c <= '㆏')  // 한글 호환 자모
-                || (c >= '一' && c <= '鿿')  // 한자
-                || (c >= '！' && c <= '｠'); // 전각 기호
-    }
-
-
-    /**
-     * 표시 너비가 width가 되도록 오른쪽을 공백으로 채우는 헬퍼 메서드입니다.
-     */
-    private String PadRight(String text, int width) {
-        return text + " ".repeat(Math.max(0, width - DisplayWidth(text)));
-    }
-
-
-    /**
-     * 표시 너비가 width가 되도록 왼쪽을 공백으로 채우는 헬퍼 메서드입니다.
-     */
-    private String PadLeft(String text, int width) {
-        return " ".repeat(Math.max(0, width - DisplayWidth(text))) + text;
-    }
-
-
-    /**
-     * 표시 너비가 maxWidth를 넘으면 잘라서 ".."을 붙이는 헬퍼 메서드입니다.
-     */
-    private String Truncate(String text, int maxWidth) {
-
-        if (DisplayWidth(text) <= maxWidth) {
-            return text;
-        }
-
-        StringBuilder result = new StringBuilder();
-        int width = 0;
-
-        for (char c : text.toCharArray()) {
-
-            int charWidth = IsWide(c) ? 2 : 1;
-
-            if (width + charWidth > maxWidth - 2) {
-                break;
-            }
-
-            result.append(c);
-            width += charWidth;
-        }
-
-        return result + "..";
     }
 }

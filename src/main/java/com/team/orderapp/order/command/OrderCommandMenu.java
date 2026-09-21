@@ -1,6 +1,7 @@
 package com.team.orderapp.order.command;
 
 import com.team.orderapp.auth.LoginSession;
+import com.team.orderapp.common.ConsoleUi;
 
 import java.util.Scanner;
 
@@ -42,27 +43,34 @@ public class OrderCommandMenu {
      */
     public void Run() {
 
+        ConsoleUi.ClearScreen();
+        ConsoleUi.ScreenHeader("RETURN", "주문 반품");
+
         System.out.println();
-        System.out.println("=== 주문 반품 (0을 입력하면 취소) ===");
-        System.out.println("반품은 주문 전체 단위로 처리되며, 되돌릴 수 없습니다.");
+        ConsoleUi.Warn("반품은 주문 전체 단위로 처리되며, 되돌릴 수 없습니다.");
+        ConsoleUi.Info("주문번호에 0을 입력하면 취소합니다.");
+        System.out.println();
 
         while (true) {
 
-            System.out.print("주문번호 > ");
+            ConsoleUi.Prompt("주문번호");
             String orderNo = scanner.nextLine().trim();
 
             if (CANCEL_INPUT.equals(orderNo)) {
-                System.out.println("취소했습니다.");
+                ConsoleUi.Cancelled();
                 return;
             }
 
             if (orderNo.isEmpty()) {
-                System.out.println("[오류] 주문번호를 입력해 주세요.");
+                ConsoleUi.Error("주문번호를 입력해 주세요.");
                 continue;
             }
 
-            if (!ReadYesNo(orderNo + " 주문을 반품할까요? (Y/N) > ")) {
-                System.out.println("취소했습니다.");
+            System.out.println();
+            ConsoleUi.YesNoOptions("반품 확정", "취소");
+
+            if (!ReadYesNo(ConsoleUi.Cyan(orderNo) + " 주문을 반품할까요?")) {
+                ConsoleUi.Cancelled();
                 return;
             }
 
@@ -74,17 +82,28 @@ public class OrderCommandMenu {
                         LoginSession.IsAdmin()
                 );
 
-                System.out.println("반품이 완료되었습니다. 결제 금액은 환불 절차에 따라 처리됩니다.");
+                ConsoleUi.ClearScreen();
+                ConsoleUi.CompleteBox(
+                        "RETURN COMPLETE",
+                        "반품 완료",
+                        ConsoleUi.InfoLine("주문번호", ConsoleUi.Cyan(orderNo)),
+                        ConsoleUi.InfoLine("주문상태", ConsoleUi.Status("RETURNED"))
+                );
+
+                System.out.println();
+                ConsoleUi.Success("반품이 완료되었습니다.");
+                ConsoleUi.Info("결제 금액은 환불 절차에 따라 처리됩니다.");
+                ConsoleUi.PressEnter(scanner);
                 return;
 
             } catch (IllegalArgumentException e) {
 
                 // 주문번호를 잘못 입력했거나 이미 반품된 주문이면 다시 입력받는다.
-                System.out.println("[오류] " + e.getMessage());
+                ConsoleUi.Error(e.getMessage());
 
             } catch (RuntimeException e) {
 
-                System.out.println("[오류] 반품 처리 중 문제가 발생했습니다. 잠시 후 다시 시도해 주세요.");
+                ConsoleUi.Error("반품 처리 중 문제가 발생했습니다. 잠시 후 다시 시도해 주세요.");
                 return;
             }
         }
@@ -98,7 +117,7 @@ public class OrderCommandMenu {
 
         while (true) {
 
-            System.out.print(prompt);
+            ConsoleUi.Prompt(prompt + " (Y/N)");
             String input = scanner.nextLine().trim();
 
             if (input.equalsIgnoreCase("Y")) {
@@ -108,7 +127,7 @@ public class OrderCommandMenu {
                 return false;
             }
 
-            System.out.println("Y 또는 N을 입력해 주세요.");
+            ConsoleUi.Error("Y 또는 N을 입력해 주세요.");
         }
     }
 }
