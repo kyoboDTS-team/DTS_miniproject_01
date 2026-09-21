@@ -3,6 +3,7 @@ package com.team.orderapp.app;
 import com.team.orderapp.auth.*;
 import com.team.orderapp.cart.CartMenu;
 import com.team.orderapp.cart.CartService;
+import com.team.orderapp.order.command.OrderCommandMenu;
 import com.team.orderapp.order.query.OrderQueryMenu;
 import com.team.orderapp.product.ProductMenu;
 
@@ -100,6 +101,10 @@ public class GuestMenu {
                     }
                     break;
 
+                case "7":
+                    new OrderCommandMenu(scanner).Run();
+                    break;
+
                 case "0":
                     System.out.println("프로그램을 종료합니다.");
                     return;
@@ -156,6 +161,7 @@ public class GuestMenu {
         System.out.println("4. 비회원 주문 조회");
         System.out.println("5. 로그인");
         System.out.println("6. 회원가입");
+        System.out.println("7. 반품");
         System.out.println("0. 종료");
         System.out.println("----------------------------------------");
         System.out.print("선택 > ");
