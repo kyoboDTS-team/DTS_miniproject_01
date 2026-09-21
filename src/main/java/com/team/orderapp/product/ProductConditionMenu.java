@@ -63,6 +63,10 @@ public class ProductConditionMenu {
                     // 카테고리와 가격을 모두 적용해 조회
                     return FindByCategoryAndPriceRange();
 
+                case "4":
+                    // 상품명 검색
+                    return FindByProductName();
+
                 case "0":
                     // 이전 화면으로 이동
                     return null;
@@ -131,6 +135,19 @@ public class ProductConditionMenu {
                         maxPrice
                 );
     }
+    /**
+     * 상품명 검색어를 입력받아
+     * 해당 글자가 포함된 상품 목록을 조회합니다.
+     */
+    private List<Product> FindByProductName() {
+
+        System.out.print("검색할 상품명 > ");
+
+        String keyword =
+                scanner.nextLine().trim();
+
+        return productService.FindProductsByName(keyword);
+    }
 
 
     /**
@@ -145,6 +162,7 @@ public class ProductConditionMenu {
         System.out.println("1. 카테고리로 조회");
         System.out.println("2. 가격 범위로 조회");
         System.out.println("3. 카테고리 + 가격으로 조회");
+        System.out.println("4. 상품명으로 검색");
         System.out.println("0. 이전");
         System.out.println("----------------------------------------");
         System.out.print("선택 > ");
@@ -182,7 +200,6 @@ public class ProductConditionMenu {
             }
         }
     }
-
 
     /**
      * 가격을 BigDecimal 형태로 입력받습니다.

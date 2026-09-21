@@ -209,7 +209,29 @@ ORDER BY price
             @Param("minPrice") BigDecimal minPrice,
             @Param("maxPrice") BigDecimal maxPrice
     );
-
+    // =========================================================
+// 상품명 키워드 검색
+// 예: "펜" 입력 → 상품명에 "펜"이 포함된 상품 조회
+// =========================================================
+    @Select("""
+    SELECT
+        product_id,
+        product_code,
+        category_id,
+        product_name,
+        price,
+        stock_quantity,
+        reorder_level,
+        sale_status,
+        requires_serial,
+        created_at
+    FROM product
+    WHERE product_name LIKE CONCAT('%', #{keyword}, '%')
+    ORDER BY product_id
+    """)
+    List<Product> FindByProductName(
+            @Param("keyword") String keyword
+    );
 
     // =========================================================
     // 실제 상품 등록
