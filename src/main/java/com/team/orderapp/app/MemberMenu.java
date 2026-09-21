@@ -1,6 +1,10 @@
 package com.team.orderapp.app;
 
+import com.team.orderapp.auth.LoginSession;
+import com.team.orderapp.cart.CartMenu;
+import com.team.orderapp.cart.CartService;
 import com.team.orderapp.customer.MyInfoMenu;
+import com.team.orderapp.order.command.OrderCommandMenu;
 import com.team.orderapp.order.query.OrderQueryMenu;
 import com.team.orderapp.product.ProductMenu;
 
@@ -19,6 +23,12 @@ public class MemberMenu {
     private final ProductMenu productMenu;
 
     private final OrderQueryMenu orderQueryMenu;
+
+    private final CartMenu cartMenu;
+
+    private final OrderCommandMenu orderCommandMenu;
+
+    private final CartService cartService;
     public MemberMenu(
             Scanner scanner,
             String email
@@ -28,6 +38,10 @@ public class MemberMenu {
         this.email = email;
         this.productMenu = new ProductMenu(scanner);
         this.orderQueryMenu = new OrderQueryMenu(scanner);
+        this.cartMenu = new CartMenu(scanner);
+        this.orderCommandMenu = new OrderCommandMenu(scanner);
+        this.cartService = new CartService();
+
     }
 
 
@@ -46,31 +60,33 @@ public class MemberMenu {
             switch (input) {
 
                 case "1":
-                    // TODO: 상품 전체 조회 연결
+                    //작성자: 박형준
                     productMenu.ShowAllProducts();
-                    System.out.println("[TODO] 상품 전체 조회");
+
                     break;
 
                 case "2":
-                    // TODO: 상품 조건 조회 연결
+                    //작성자: 박형준
                     productMenu.ShowProductsByCondition();
-                    System.out.println("[TODO] 상품 조건 조회");
+
                     break;
 
                 case "3":
-                    // TODO: 장바구니 메뉴 연결
-                    System.out.println("[TODO] 장바구니 보기");
+
+                    cartMenu.Run();
+
                     break;
 
                 case "4":
-                    // TODO: 로그인한 회원의 주문 목록 / 상세 조회 연결
-//                    orderQueryMenu.ShowMyOrders(); <- 여기는 파라미터로 customer
-                    System.out.println("[TODO] 내 주문 목록 / 상세");
+                    //작성자: 박형준
+                    orderQueryMenu.ShowMyOrders(LoginSession.getCustomerId());
+
                     break;
 
                 case "5":
-                    // TODO: 본인 주문 반품 기능 연결
-                    System.out.println("[TODO] 반품");
+
+                    orderCommandMenu.Run();
+
                     break;
 
                 case "6":
@@ -85,9 +101,10 @@ public class MemberMenu {
                     break;
 
                 case "7":
-                    // TODO:
+
                     // 로그아웃 시 LoginSession 정리
                     // 장바구니도 함께 초기화
+                    LoginSession.Logout();
                     System.out.println("로그아웃합니다.");
 
                     // GuestMenu 또는 로그인 흐름으로 돌아가도록
@@ -124,7 +141,7 @@ public class MemberMenu {
         System.out.println("[회원] " + email);
 
         // TODO: Cart 구현 완료 후 실제 장바구니 총 수량 표시
-        System.out.println("장바구니(" + GetCartCount() + ")");
+        System.out.println("장바구니(" + cartService.GetCartCount() + ")");
 
         System.out.println("========================================");
         System.out.println("1. 상품 전체 조회");
@@ -139,13 +156,4 @@ public class MemberMenu {
         System.out.print("선택 > ");
     }
 
-
-    /**
-     * 장바구니 총 수량
-     */
-    private int GetCartCount() {
-
-        // TODO: 나중에 CartService 또는 Cart와 연결
-        return 0;
-    }
 }

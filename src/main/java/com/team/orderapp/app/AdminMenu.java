@@ -1,5 +1,7 @@
 package com.team.orderapp.app;
 
+import com.team.orderapp.auth.LoginSession;
+import com.team.orderapp.customer.CustomerMenu;
 import com.team.orderapp.product.ProductCommandMenu;
 import com.team.orderapp.stock.StockMenu;
 import com.team.orderapp.order.query.OrderQueryMenu;
@@ -66,7 +68,9 @@ public class AdminMenu {
 
                 case "3":
                     // TODO: 회원 관리 메뉴 연결
-                    System.out.println("[TODO] 회원 관리");
+                    CustomerMenu customerMenu = new CustomerMenu(scanner);
+
+                    customerMenu.DisplayMenu();
                     break;
 
                 case "4":
@@ -89,7 +93,8 @@ public class AdminMenu {
                     break;
 
                 case "7":
-                    // TODO: 관리자 LoginSession 초기화
+
+                    LoginSession.Logout();
                     System.out.println("로그아웃합니다.");
 
                     // 상위 GuestMenu / 로그인 흐름으로 복귀

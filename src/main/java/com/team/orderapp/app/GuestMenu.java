@@ -1,11 +1,12 @@
 package com.team.orderapp.app;
 
-import com.team.orderapp.auth.LoginService;
-import com.team.orderapp.auth.LoginSession;
-import com.team.orderapp.auth.SignupMenu;
+import com.team.orderapp.auth.*;
+import com.team.orderapp.cart.CartMenu;
+import com.team.orderapp.cart.CartService;
 import com.team.orderapp.order.query.OrderQueryMenu;
 import com.team.orderapp.product.ProductMenu;
 
+import java.util.Optional;
 import java.util.Scanner;
 
 /**
@@ -22,10 +23,18 @@ public class GuestMenu {
 
     private final OrderQueryMenu orderQueryMenu;
 
+    private final CartService cartService;
+
+    private final LoginMenu loginMenu;
+
+    private final CartMenu cartMenu;
     public GuestMenu(Scanner scanner) {
         this.scanner = scanner;
         this.productMenu = new ProductMenu(scanner);
         this.orderQueryMenu = new OrderQueryMenu(scanner);
+        this.cartService = new CartService();
+        this.cartMenu = new CartMenu(scanner);
+        this.loginMenu = new LoginMenu(scanner);
     }
 
 
@@ -56,8 +65,8 @@ public class GuestMenu {
                     break;
 
                 case "3":
-                    // TODO: 장바구니 메뉴 연결
-                    System.out.println("[TODO] 장바구니 보기");
+
+                    cartMenu.Run();
                     break;
 
                 case "4":
@@ -67,12 +76,20 @@ public class GuestMenu {
                     break;
 
                 case "5":
-                    // TODO: 로그인 메뉴 연결
-                    //
-                    // 로그인 성공 후 role에 따라서
-                    // CUSTOMER -> MemberMenu
-                    // ADMIN    -> AdminMenu
-                    System.out.println("[TODO] 로그인");
+                {
+                    UserRole user = loginMenu.Run();
+
+                    if (user == null) break;
+
+                    //회원이면 회원메뉴로 이동
+                    if (user == UserRole.CUSTOMER) {
+                        EnterMemberMenu();
+                    }
+                    //관리자면 관리자로 이동
+                    else if (user == UserRole.ADMIN) {
+                        EnterAdminMenu();
+                    }
+                }
                     break;
 
                 case "6":
@@ -110,6 +127,13 @@ public class GuestMenu {
         new LoginService().Logout();
     }
 
+    private void EnterAdminMenu() {
+
+        new AdminMenu(scanner, LoginSession.getUserId(), LoginSession.getEmail()).Run();
+
+        new LoginService().Logout();
+    }
+
 
     // ============================================================
     // 화면 출력
@@ -123,7 +147,7 @@ public class GuestMenu {
         System.out.println("----------------------------------------");
 
         // TODO: Cart 구현 완료 후 실제 장바구니 총 수량으로 변경
-        System.out.println("장바구니(" + GetCartCount() + ")");
+        System.out.println("장바구니(" + cartService.GetCartCount() + ")");
 
         System.out.println("========================================");
         System.out.println("1. 상품 전체 조회");
@@ -138,14 +162,4 @@ public class GuestMenu {
     }
 
 
-    /**
-     * 현재 장바구니 총 상품 수량
-     *
-     * Cart 구현 전까지는 0 반환
-     */
-    private int GetCartCount() {
-
-        // TODO: 나중에 CartService 또는 Cart에서 총 수량 가져오기
-        return 0;
-    }
 }
