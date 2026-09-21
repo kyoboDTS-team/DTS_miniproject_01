@@ -6,8 +6,11 @@ import com.team.orderapp.common.DbConnectionFactory;
 import com.team.orderapp.common.OrderNoGenerator;
 import com.team.orderapp.order.model.Order;
 import com.team.orderapp.order.model.OrderItem;
+import com.team.orderapp.order.model.OrderItemUnit;
 import com.team.orderapp.product.Product;
+import com.team.orderapp.product.ProductUnit;
 import com.team.orderapp.product.ProductDao;
+import com.team.orderapp.product.ProductUnitDao;
 import org.apache.ibatis.session.SqlSession;
 
 import java.util.List;
@@ -30,6 +33,8 @@ public class OrderCommandService {
      */
 
     private static final String SALE_STATUS_SELLING = "SELLING";
+    private static final String UNIT_STATUS_AVAILABLE = "AVAILABLE";
+    private static final String UNIT_STATUS_SOLD = "SOLD";
 
     /**
      * 장바구니에 담긴 상품을 주문합니다.
@@ -59,6 +64,7 @@ public class OrderCommandService {
 
             OrderCommandDao orderDao = session.getMapper(OrderCommandDao.class);
             ProductDao productDao = session.getMapper(ProductDao.class);
+            ProductUnitDao productUnitDao = session.getMapper(ProductUnitDao.class);
 
             Order order = new Order();
             orderNo = OrderNoGenerator.Generate();
@@ -94,7 +100,10 @@ public class OrderCommandService {
                     );
                 }
 
-                // TODO: 시리얼 상품(requiresSerial)의 시리얼 배정 — 쿼리 위치 결정 후 추가 (2026-09-21 회의)
+                // 시리얼 관리 상품이면 개체를 배정한다. 실패하면 주문 전체가 롤백된다.
+                if (Boolean.TRUE.equals(product.getRequiresSerial())) {
+                    AssignSerials(productUnitDao, orderDao, orderItem, product);
+                }
             }
 
             session.commit();
@@ -132,6 +141,7 @@ public class OrderCommandService {
 
             OrderCommandDao orderDao = session.getMapper(OrderCommandDao.class);
             ProductDao productDao = session.getMapper(ProductDao.class);
+            ProductUnitDao productUnitDao = session.getMapper(ProductUnitDao.class);
 
             Order order = orderDao.FindByOrderNo(normalizedOrderNo)
                     .orElseThrow(() -> new IllegalArgumentException("주문을 찾을 수 없습니다."));
@@ -153,12 +163,95 @@ public class OrderCommandService {
                 if (!stockRestored) {
                     throw new IllegalStateException("재고 복구에 실패했습니다. 관리자에게 문의해 주세요.");
                 }
-
-                // TODO: 시리얼 복구(SOLD → AVAILABLE, order_item_unit.returned_at 기록)
-                //       — 쿼리 위치 결정 후 추가 (2026-09-21 회의)
             }
 
+            // 시리얼 복구. 배정 이력은 주문 품목별이 아니라 주문 단위로 한 번에 되돌린다.
+            RestoreSerials(productUnitDao, orderDao, order.getOrderId());
+
             session.commit();
+        }
+    }
+
+
+    /**
+     * 시리얼 관리 상품에 개체를 배정하는 헬퍼 메서드입니다.
+     *
+     * 판매 가능한 시리얼을 수량만큼 가져와 SOLD로 바꾸고, 배정 이력(order_item_unit)을 남깁니다.
+     * 상태 변경은 조건부 UPDATE라, 조회와 변경 사이에 다른 주문이 같은 개체를 먼저 가져갔으면
+     * 바뀐 행이 0이 되어 주문 전체가 취소됩니다.
+     *
+     * @throws IllegalArgumentException 판매 가능한 시리얼이 수량보다 적거나, 배정 도중 선점당한 경우
+     */
+    private void AssignSerials(ProductUnitDao productUnitDao,
+                               OrderCommandDao orderDao,
+                               OrderItem orderItem,
+                               Product product) {
+
+        int quantity = orderItem.getQuantity();
+
+        List<ProductUnit> units =
+                productUnitDao.FindAvailableByProductId(product.getProductId(), quantity);
+
+        // 재고 숫자는 맞아도 등록된 시리얼이 모자랄 수 있다(관리자가 시리얼을 덜 등록한 경우).
+        if (units.size() < quantity) {
+            throw new IllegalArgumentException(
+                    "판매 가능한 시리얼이 부족합니다: " + product.getProductName()
+            );
+        }
+
+        for (ProductUnit unit : units) {
+
+            int changed = productUnitDao.UpdateStatus(
+                    unit.getProductUnitId(), UNIT_STATUS_AVAILABLE, UNIT_STATUS_SOLD
+            );
+
+            if (changed != 1) {
+                throw new IllegalArgumentException(
+                        "다른 주문이 먼저 처리되었습니다. 다시 시도해 주세요: " + product.getProductName()
+                );
+            }
+
+            OrderItemUnit orderItemUnit = new OrderItemUnit();
+            orderItemUnit.setOrderItemId(orderItem.getOrderItemId());
+            orderItemUnit.setProductUnitId(unit.getProductUnitId());
+
+            orderDao.InsertOrderItemUnit(orderItemUnit);
+        }
+    }
+
+
+    /**
+     * 반품 시 시리얼을 되돌리는 헬퍼 메서드입니다.
+     *
+     * 이 주문으로 나간 개체를 SOLD에서 AVAILABLE로 바꾸고, 배정 이력에 반품 시각을 남깁니다.
+     * 시리얼 상품이 없는 주문이면 목록이 비어 아무 일도 하지 않습니다.
+     *
+     * 여기서 실패하는 것은 사용자 잘못이 아니라 데이터가 어긋난 상태이므로
+     * IllegalStateException으로 구분해 던집니다(§6-1 관례).
+     *
+     * @throws IllegalStateException 시리얼 상태가 SOLD가 아니거나 이미 반품 기록이 있는 경우
+     */
+    private void RestoreSerials(ProductUnitDao productUnitDao,
+                                OrderCommandDao orderDao,
+                                Long orderId) {
+
+        for (OrderItemUnit unit : orderDao.FindUnitsByOrderId(orderId)) {
+
+            int restored = productUnitDao.UpdateStatus(
+                    unit.getProductUnitId(), UNIT_STATUS_SOLD, UNIT_STATUS_AVAILABLE
+            );
+
+            if (restored != 1) {
+                throw new IllegalStateException(
+                        "시리얼 복구에 실패했습니다. 관리자에게 문의해 주세요."
+                );
+            }
+
+            if (orderDao.MarkUnitReturned(unit.getOrderItemUnitId()) != 1) {
+                throw new IllegalStateException(
+                        "시리얼 반품 기록에 실패했습니다. 관리자에게 문의해 주세요."
+                );
+            }
         }
     }
 
