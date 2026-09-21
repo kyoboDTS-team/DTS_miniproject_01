@@ -20,55 +20,54 @@ public interface ProductDao {
     // 기존 테스트용 상품 등록
     // =========================================================
     @Insert("""
-        INSERT INTO product (
-            product_code,
-            category_id,
-            product_name,
-            price,
-            stock_quantity,
-            reorder_level,
-            sale_status,
-            requires_serial
-        )
-        VALUES (
-            #{productCode},
-            #{categoryId},
-            #{productName},
-            #{price},
-            #{stockQuantity},
-            #{reorderLevel},
-            #{saleStatus},
-            #{requiresSerial}
-        )
-        """)
+            INSERT INTO product (
+                product_code,
+                category_id,
+                product_name,
+                price,
+                stock_quantity,
+                reorder_level,
+                sale_status,
+                requires_serial
+            )
+            VALUES (
+                #{productCode},
+                #{categoryId},
+                #{productName},
+                #{price},
+                #{stockQuantity},
+                #{reorderLevel},
+                #{saleStatus},
+                #{requiresSerial}
+            )
+            """)
     void InsertProduct(Product product);
 
 
     // =========================================================
     // 기존 간단 테스트용 INSERT
-    //
-    // 이 메서드는 지금부터 상품 등록 기능에서는 사용하지 않을 예정 나중에 삭제해도 됨
+    // 현재 실제 상품 등록에서는 사용하지 않음
     // =========================================================
     @Insert("""
-        INSERT INTO product (
-            product_code,
-            category_id,
-            product_name,
-            price,
-            stock_quantity
-        )
-        VALUES (
-            #{productCode},
-            #{categoryId},
-            #{productName},
-            #{price},
-            #{stockQuantity}
-        )
-        ON CONFLICT (product_code)
-        DO UPDATE SET
-            price = EXCLUDED.price,
-            product_name = EXCLUDED.product_name
-        """)
+            INSERT INTO product (
+                product_code,
+                category_id,
+                product_name,
+                price,
+                stock_quantity
+            )
+            VALUES (
+                #{productCode},
+                #{categoryId},
+                #{productName},
+                #{price},
+                #{stockQuantity}
+            )
+            ON CONFLICT (product_code)
+            DO UPDATE SET
+                price = EXCLUDED.price,
+                product_name = EXCLUDED.product_name
+            """)
     void InsertProductSimple(
             @Param("productCode") String productCode,
             @Param("categoryId") Long categoryId,
@@ -82,99 +81,184 @@ public interface ProductDao {
     // 전체 상품 조회
     // =========================================================
     @Select("""
-        SELECT
-            product_id,
-            product_code,
-            category_id,
-            product_name,
-            price,
-            stock_quantity,
-            reorder_level,
-            sale_status,
-            requires_serial,
-            created_at
-        FROM product
-        ORDER BY product_id
-        """)
+            SELECT
+                product_id,
+                product_code,
+                category_id,
+                product_name,
+                price,
+                stock_quantity,
+                reorder_level,
+                sale_status,
+                requires_serial,
+                created_at
+            FROM product
+            ORDER BY product_id
+            """)
     List<Product> GetAllProducts();
 
 
-    /**
-     * 식별자(ID)로 상품 정보를 조회합니다.
-     */
-
+    // =========================================================
+    // 상품 ID로 조회
+    // =========================================================
     @Select("""
-        SELECT
-            product_id,
-            product_code,
-            category_id,
-            product_name,
-            price,
-            stock_quantity,
-            reorder_level,
-            sale_status,
-            requires_serial,
-            created_at
-        FROM product
-        WHERE product_id = #{productId}
-        """)
+            SELECT
+                product_id,
+                product_code,
+                category_id,
+                product_name,
+                price,
+                stock_quantity,
+                reorder_level,
+                sale_status,
+                requires_serial,
+                created_at
+            FROM product
+            WHERE product_id = #{productId}
+            """)
     Optional<Product> FindById(
             @Param("productId") Long productId
     );
 
 
-    /**
-     * 전체 상품 목록을 조회합니다.
-     */
+    // =========================================================
+    // 전체 상품 조회
+    // 박형준 담당 조회 기능에서 사용
+    // =========================================================
     @Select("""
-        SELECT
-            product_id,
-            product_code,
-            category_id,
-            product_name,
-            price,
-            stock_quantity,
-            reorder_level,
-            sale_status,
-            requires_serial,
-            created_at
-        FROM product
-        ORDER BY product_id
-        """)
+            SELECT
+                product_id,
+                product_code,
+                category_id,
+                product_name,
+                price,
+                stock_quantity,
+                reorder_level,
+                sale_status,
+                requires_serial,
+                created_at
+            FROM product
+            ORDER BY product_id
+            """)
     List<Product> FindAll();
 
-
-    /**
-     * 실제 상품 등록에서 사용할 INSERT
-     */
     // =========================================================
-    // 앞으로 ProductService에서는 이 메서드를 사용
+// 상품 ID로 조회
+// =========================================================
+    @Select("""
+    SELECT
+        product_id,
+        product_code,
+        category_id,
+        product_name,
+        price,
+        stock_quantity,
+        reorder_level,
+        sale_status,
+        requires_serial,
+        created_at
+    FROM product
+    WHERE category_Id = #{categoryId}
+    """)
+    List<Product> FindByCategory(
+            @Param("categoryId") Long categoryId
+    );
+
+    //가격 범위 조회
+    @Select("""
+SELECT
+    product_id,
+    product_code,
+    category_id,
+    product_name,
+    price,
+    stock_quantity,
+    reorder_level,
+    sale_status,
+    requires_serial,
+    created_at
+FROM product
+WHERE price BETWEEN #{minPrice} AND #{maxPrice}
+ORDER BY price
+""")
+    List<Product> FindByPriceRange(
+            @Param("minPrice") BigDecimal minPrice,
+            @Param("maxPrice") BigDecimal maxPrice
+    );
+
+    //선택한 카테고리 가격 범위 조회
+    @Select("""
+SELECT
+    product_id,
+    product_code,
+    category_id,
+    product_name,
+    price,
+    stock_quantity,
+    reorder_level,
+    sale_status,
+    requires_serial,
+    created_at
+FROM product
+WHERE category_id = #{categoryId}
+  AND price BETWEEN #{minPrice} AND #{maxPrice}
+ORDER BY price
+""")
+    List<Product> FindByCategoryAndPriceRange(
+            @Param("categoryId") Long categoryId,
+            @Param("minPrice") BigDecimal minPrice,
+            @Param("maxPrice") BigDecimal maxPrice
+    );
+    // =========================================================
+// 상품명 키워드 검색
+// 예: "펜" 입력 → 상품명에 "펜"이 포함된 상품 조회
+// =========================================================
+    @Select("""
+    SELECT
+        product_id,
+        product_code,
+        category_id,
+        product_name,
+        price,
+        stock_quantity,
+        reorder_level,
+        sale_status,
+        requires_serial,
+        created_at
+    FROM product
+    WHERE product_name LIKE CONCAT('%', #{keyword}, '%')
+    ORDER BY product_id
+    """)
+    List<Product> FindByProductName(
+            @Param("keyword") String keyword
+    );
+
+    // =========================================================
+    // 실제 상품 등록
+    // 담당 : 백종민
     // =========================================================
     @Insert("""
-        INSERT INTO product (
-            product_code,
-            category_id,
-            product_name,
-            price,
-            stock_quantity,
-            reorder_level,
-            sale_status,
-            requires_serial
-        )
-        VALUES (
-            #{productCode},
-            #{categoryId},
-            #{productName},
-            #{price},
-            #{stockQuantity},
-            #{reorderLevel},
-            #{saleStatus},
-            #{requiresSerial}
-        )
-        """)
-
-    // DB에서 자동 생성한 product_id를
-    // INSERT 후 Product 객체에 다시 넣어줌
+            INSERT INTO product (
+                product_code,
+                category_id,
+                product_name,
+                price,
+                stock_quantity,
+                reorder_level,
+                sale_status,
+                requires_serial
+            )
+            VALUES (
+                #{productCode},
+                #{categoryId},
+                #{productName},
+                #{price},
+                #{stockQuantity},
+                #{reorderLevel},
+                #{saleStatus},
+                #{requiresSerial}
+            )
+            """)
     @Options(
             useGeneratedKeys = true,
             keyProperty = "productId",
@@ -183,43 +267,147 @@ public interface ProductDao {
     boolean Insert(Product product);
 
 
-    /**
-     * 상품 정보를 수정합니다.
-     */
+    // =========================================================
+    // 상품 수정
+    // 담당 : 백종민
+    //
+    // 상품명 / 카테고리 / 가격 / 안전재고 기준만 수정
+    //
+    // 재고(stock_quantity)는 재고 관리에서 수정
+    // 판매상태(sale_status)는 판매상태 변경 기능에서 수정
+    // =========================================================
     @Update("""
-        UPDATE product
-        SET
-            product_name = #{productName},
-            price = #{price},
-            stock_quantity = #{stockQuantity},
-            sale_status = #{saleStatus}
-        WHERE product_id = #{productId}
-        """)
+            UPDATE product
+            SET
+                product_name = #{productName},
+                category_id = #{categoryId},
+                price = #{price},
+                reorder_level = #{reorderLevel}
+            WHERE product_id = #{productId}
+            """)
     boolean Update(Product product);
 
 
-    /**
-     * 상품 재고 증감
-     */
+    // =========================================================
+    // 상품 판매 상태 변경
+    // 백종민
+    //
+    // SELLING  : 판매중
+    // STOPPED  : 판매중지
+    // =========================================================
     @Update("""
-        UPDATE product
-        SET stock_quantity = stock_quantity + #{delta}
-        WHERE product_id = #{productId}
-        """)
-    boolean UpdateStock(
+            UPDATE product
+            SET sale_status = #{saleStatus}
+            WHERE product_id = #{productId}
+            """)
+    boolean UpdateSaleStatus(
             @Param("productId") Long productId,
-            @Param("delta") int delta
+            @Param("saleStatus") String saleStatus
+    );
+
+    // =========================================================
+    // 상품 삭제 가능 여부 확인
+    // 백종민
+    //
+    // 주문 / 재고조정 / 시리얼 이력이 하나라도 있으면 true
+    // =========================================================
+    @Select("""
+            SELECT EXISTS (
+                SELECT 1
+                FROM order_item
+                WHERE product_id = #{productId}
+            
+                UNION ALL
+            
+                SELECT 1
+                FROM stock_adjustment
+                WHERE product_id = #{productId}
+            
+                UNION ALL
+            
+                SELECT 1
+                FROM product_unit
+                WHERE product_id = #{productId}
+            )
+            """)
+    boolean HasDeleteHistory(
+            @Param("productId") Long productId
     );
 
 
-    /**
-     * 상품 삭제
-     */
+    // =========================================================
+    // 상품 삭제
+    // 실제 삭제 가능한 상품만 호출
+    // =========================================================
     @Delete("""
-        DELETE FROM product
-        WHERE product_id = #{productId}
-        """)
+            DELETE FROM product
+            WHERE product_id = #{productId}
+            """)
     boolean DeleteById(
             @Param("productId") Long productId
     );
+
+
+    // =========================================================
+    // 상품 재고 증감
+    //
+    // 나중에 재고 관리 기능에서 사용
+    // =========================================================
+    @Update("""
+    UPDATE product
+    SET stock_quantity = stock_quantity + #{delta}
+    WHERE product_id = #{productId}
+      AND stock_quantity + #{delta} >= 0
+    """)
+    boolean UpdateStock(
+            @Param("productId") Long productId,
+            @Param("delta") int delt
+    );
+
+    // ============================================================
+    // 재고 부족 상품 조회
+    //
+    // 품절(stock_quantity = 0)은 별도로 조회하기 때문에 제외
+    // 현재 재고가 1개 이상이면서 안전재고 이하인 상품만 조회
+    // ============================================================
+    @Select("""
+    SELECT
+        product_id,
+        product_code,
+        category_id,
+        product_name,
+        price,
+        stock_quantity,
+        reorder_level,
+        sale_status,
+        requires_serial,
+        created_at
+    FROM product
+    WHERE stock_quantity > 0
+      AND stock_quantity <= reorder_level
+    ORDER BY stock_quantity ASC, product_id ASC
+    """)
+    List<Product> FindLowStockProducts();
+
+
+    // ============================================================
+    // 품절 상품 조회
+    // ============================================================
+    @Select("""
+    SELECT
+        product_id,
+        product_code,
+        category_id,
+        product_name,
+        price,
+        stock_quantity,
+        reorder_level,
+        sale_status,
+        requires_serial,
+        created_at
+    FROM product
+    WHERE stock_quantity = 0
+    ORDER BY product_id ASC
+    """)
+    List<Product> FindOutOfStockProducts();
 }

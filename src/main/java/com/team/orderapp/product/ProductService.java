@@ -4,6 +4,8 @@ import com.team.orderapp.common.DbConnectionFactory;
 import org.apache.ibatis.session.SqlSession;
 
 import java.math.BigDecimal;
+import java.util.List;
+import java.util.Optional;
 
 public class ProductService {
 
@@ -137,17 +139,394 @@ public class ProductService {
     // FindProductsByCondition()
     // ============================================================
 
+    //전체 상품 조회
+    public List<Product> FindAllProducts() {
+
+        try (SqlSession session = OpenSession()) {
+
+            ProductDao productDao = GetProductDao(session);
+
+            return productDao.FindAll();
+        }
+
+    }
+
+    //상품 번호로 조회
+    public Optional<Product> FindProductById(Long productId) {
+
+        try(SqlSession session = OpenSession()){
+
+            ProductDao productDao = GetProductDao(session);
+
+            return productDao.FindById(productId);
+        }
+
+    }
+
+    //카테고리별 조회
+    public List<Product> FindProductsByCategoryId(Long categoryId) {
+
+        try (SqlSession session = OpenSession()) {
+
+            ProductDao productDao = GetProductDao(session);
+
+
+            return productDao.FindByCategory(categoryId);
+        }
+    }
+
+    //가격범위 조회
+    public List<Product> FindByPriceRange(BigDecimal minPrice, BigDecimal maxPrice) {
+
+        if (minPrice.compareTo(maxPrice) > 0) {
+
+            throw new IllegalStateException(
+                    "최소 가격은 최대 가격보다 클 수 없습니다.");
+        }
+        try (SqlSession session = OpenSession()) {
+
+            ProductDao productDao = GetProductDao(session);
+
+            return productDao.FindByPriceRange(minPrice, maxPrice);
+        }
+    }
+    public List<Product> FindProductsByName(String keyword) {
+
+        if (keyword == null || keyword.isBlank()) {
+            throw new IllegalArgumentException(
+                    "검색할 상품명을 입력해 주세요."
+            );
+        }
+
+        try (SqlSession session = OpenSession()) {
+
+            ProductDao productDao =
+                    GetProductDao(session);
+
+            return productDao.FindByProductName(
+                    keyword.trim()
+            );
+        }
+    }
+
+    //선택한 카테고리 가격 범위 조회
+    public List<Product> FindByCategoryAndPriceRange(
+            Long categoryId, BigDecimal minPrice, BigDecimal maxPrice) {
+
+        if (categoryId == null || categoryId <= 0) {
+            throw new IllegalArgumentException(
+                    "올바른 카테고리 번호를 입력해주세요."
+            );
+        }
+
+        if (minPrice == null || maxPrice == null) {
+            throw new IllegalArgumentException(
+                    "최소 가격과 최대 가격을 입력해주세요."
+            );
+        }
+
+        if (minPrice.compareTo(maxPrice) > 0) {
+            throw new IllegalArgumentException(
+                    "최소 가격은 최대 가격보다 클 수 없습니다."
+            );
+        }
+        try (SqlSession session = OpenSession()) {
+
+            ProductDao productDao = GetProductDao(session);
+
+            return productDao.FindByCategoryAndPriceRange(
+                    categoryId, minPrice, maxPrice);
+        }
+
+    }
+
 
     // ============================================================
     // 상품 수정
     // 담당: 백종민
     // ============================================================
 
+    /**
+     * 상품 수정
+     *
+     * 수정 대상:
+     * - 상품명
+     * - 카테고리
+     * - 가격
+     * - 안전재고
+     */
+    public boolean UpdateProduct(Product product) {
+
+        // 수정 입력값 검증
+        ValidateProductForUpdate(product);
+
+        try (SqlSession session = OpenSession()) {
+
+            try {
+
+                ProductDao productDao =
+                        GetProductDao(session);
+
+                // DB UPDATE
+                boolean result =
+                        productDao.Update(product);
+
+                // UPDATE된 행이 없으면
+                // 없는 상품 ID일 가능성이 있음
+                if (!result) {
+
+                    session.rollback();
+                    return false;
+                }
+
+                // 정상 수정
+                session.commit();
+
+                return true;
+
+            } catch (Exception e) {
+
+                // UPDATE 도중 오류가 나면 취소
+                session.rollback();
+
+                throw e;
+            }
+
+        } catch (Exception e) {
+
+            System.out.println(
+                    "상품 수정 중 오류: "
+                            + e.getMessage()
+            );
+
+            return false;
+        }
+    }
+
+
+    /**
+     * 상품 수정 입력값 검증
+     */
+    private void ValidateProductForUpdate(
+            Product product
+    ) {
+
+        if (product == null) {
+
+            throw new IllegalArgumentException(
+                    "상품 정보가 없습니다."
+            );
+        }
+
+        // 어떤 상품을 수정할지 반드시 필요
+        if (product.getProductId() == null ||
+                product.getProductId() <= 0) {
+
+            throw new IllegalArgumentException(
+                    "올바른 상품 ID를 입력해 주세요."
+            );
+        }
+
+        if (product.getProductName() == null ||
+                product.getProductName().isBlank()) {
+
+            throw new IllegalArgumentException(
+                    "상품명을 입력해 주세요."
+            );
+        }
+
+        if (product.getCategoryId() == null ||
+                product.getCategoryId() <= 0) {
+
+            throw new IllegalArgumentException(
+                    "올바른 카테고리 ID를 입력해 주세요."
+            );
+        }
+
+        if (product.getPrice() == null ||
+                product.getPrice()
+                        .compareTo(BigDecimal.ZERO) < 0) {
+
+            throw new IllegalArgumentException(
+                    "가격은 0원 이상이어야 합니다."
+            );
+        }
+
+        if (product.getReorderLevel() == null ||
+                product.getReorderLevel() < 0) {
+
+            throw new IllegalArgumentException(
+                    "안전재고는 0 이상이어야 합니다."
+            );
+        }
+    }
+
 
     // ============================================================
     // 상품 삭제 / 판매 상태 변경
     // 담당: 백종민
     // ============================================================
+
+    /**
+     * 상품의 판매 상태를 변경.
+     *
+     * SELLING : 판매중
+     * STOPPED : 판매중지
+     */
+    public boolean ChangeSaleStatus(
+            Long productId,
+            String saleStatus
+    ) {
+
+        // 상품 ID 검증
+        if (productId == null || productId <= 0) {
+
+            throw new IllegalArgumentException(
+                    "올바른 상품 ID를 입력해 주세요."
+            );
+        }
+
+
+        // 판매 상태 검증
+        if (saleStatus == null ||
+                (!saleStatus.equals("SELLING") &&
+                        !saleStatus.equals("STOPPED"))) {
+
+            throw new IllegalArgumentException(
+                    "올바른 판매 상태가 아닙니다."
+            );
+        }
+
+
+        try (SqlSession session = OpenSession()) {
+
+            try {
+
+                ProductDao productDao =
+                        GetProductDao(session);
+
+
+                // 판매 상태 UPDATE
+                boolean result =
+                        productDao.UpdateSaleStatus(
+                                productId,
+                                saleStatus
+                        );
+
+
+                // product_id가 없어서
+                // 변경된 행이 없는 경우
+                if (!result) {
+
+                    session.rollback();
+
+                    return false;
+                }
+
+
+                // 정상 처리
+                session.commit();
+
+                return true;
+
+
+            } catch (Exception e) {
+
+                // SQL 실행 중 문제가 발생하면 원상복구
+                session.rollback();
+
+                throw e;
+            }
+
+
+        } catch (Exception e) {
+
+            System.out.println(
+                    "판매 상태 변경 중 오류: "
+                            + e.getMessage()
+            );
+
+            return false;
+        }
+    }
+
+    /**
+     * 상품을 삭제합니다.
+     *
+     * 삭제 조건:
+     * - 실제 존재하는 상품
+     * - 주문 이력 없음
+     * - 재고 조정 이력 없음
+     * - 시리얼(product_unit) 이력 없음
+     *
+     * 이력이 있는 상품은 삭제하지 않고
+     * STOPPED 상태 사용을 안내합니다.
+     */
+    public boolean DeleteProduct(Long productId) {
+
+        // 상품 ID 기본 검증
+        if (productId == null || productId <= 0) {
+            throw new IllegalArgumentException(
+                    "올바른 상품 ID를 입력해 주세요."
+            );
+        }
+
+
+        try (SqlSession session = OpenSession()) {
+
+            ProductDao productDao =
+                    GetProductDao(session);
+
+            try {
+
+                // 1. 실제 존재하는 상품인지 확인
+                Optional<Product> product =
+                        productDao.FindById(productId);
+
+                if (product.isEmpty()) {
+                    throw new IllegalArgumentException(
+                            "존재하지 않는 상품입니다."
+                    );
+                }
+
+
+                // 2. 주문 / 재고 / 시리얼 이력 확인
+                boolean hasHistory =
+                        productDao.HasDeleteHistory(productId);
+
+                if (hasHistory) {
+                    throw new IllegalStateException(
+                            "이력이 있는 상품은 삭제할 수 없습니다. "
+                                    + "판매 상태를 STOPPED로 변경해 주세요."
+                    );
+                }
+
+
+                // 3. 실제 DELETE
+                boolean result =
+                        productDao.DeleteById(productId);
+
+                if (!result) {
+                    session.rollback();
+                    return false;
+                }
+
+
+                // 삭제 성공
+                session.commit();
+
+                return true;
+
+
+            } catch (Exception e) {
+
+                // 중간에 실패하면 원상복구
+                session.rollback();
+
+                throw e;
+            }
+        }
+    }
 
 
     // ============================================================

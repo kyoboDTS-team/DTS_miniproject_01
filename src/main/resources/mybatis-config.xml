@@ -23,5 +23,12 @@
         <mapper class="com.team.orderapp.product.ProductDao"/>
         <mapper class="com.team.orderapp.product.CategoryDao"/>
         <mapper class="com.team.orderapp.product.ProductUnitDao"/>
+        <mapper class="com.team.orderapp.customer.CustomerDao"/>
+        <mapper class="com.team.orderapp.auth.AppUserDao"/>
+        <mapper class="com.team.orderapp.stock.StockAdjustmentDao"/>
+        <mapper class="com.team.orderapp.report.ReportDao"/>
+        <mapper class="com.team.orderapp.cart.CartDao"/>
+        <mapper class="com.team.orderapp.order.query.OrderQueryDao"/>
+        <mapper class="com.team.orderapp.order.command.OrderCommandDao"/>
     </mappers>
 </configuration>

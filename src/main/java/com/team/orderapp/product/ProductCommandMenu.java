@@ -1,0 +1,575 @@
+package com.team.orderapp.product;
+
+
+import java.math.BigDecimal;
+import java.util.Scanner;
+
+public class ProductCommandMenu {
+
+    private final Scanner scanner;
+    private final ProductService productService;
+
+    public ProductCommandMenu(Scanner scanner) {
+
+        this.scanner = scanner;
+        this.productService = new ProductService();
+    }
+
+
+    // ============================================================
+    // 상품 관리 메인
+    // ============================================================
+
+    public void Run() {
+
+        while (true) {
+
+            PrintMenu();
+
+            String input = scanner.nextLine().trim();
+
+            switch (input) {
+
+                case "1":
+                    RegisterProduct();
+                    break;
+
+                case "2":
+                    // 상품 수정
+                    UpdateProduct();
+                    break;
+
+                case "3":
+                    // 판매 상태 변경
+                    ChangeSaleStatus();
+                    break;
+
+                case "4":
+                    // 상품 삭제
+                    DeleteProduct();
+                    break;
+
+                case "5":
+
+                    // 카테고리 관리 메뉴 진입
+                    CategoryMenu categoryMenu =
+                            new CategoryMenu(scanner);
+
+                    categoryMenu.Run();
+
+                    break;
+
+                case "0":
+                    return;
+
+                default:
+                    System.out.println("올바른 메뉴 번호를 입력해 주세요.");
+            }
+        }
+    }
+
+
+    // ============================================================
+    // 1번 메뉴 : 상품 등록
+    // 담당: 백종민
+    // ============================================================
+
+    private void RegisterProduct() {
+
+        System.out.println();
+        System.out.println("========================================");
+        System.out.println("              상품 등록");
+        System.out.println("========================================");
+
+        try {
+
+            Product product = new Product();
+
+            // 상품 코드
+            product.setProductCode(
+                    ReadRequiredString("상품 코드 > ")
+            );
+
+            // 상품명
+            product.setProductName(
+                    ReadRequiredString("상품명 > ")
+            );
+
+            // 카테고리 ID
+            product.setCategoryId(
+                    ReadLong("카테고리 ID > ")
+            );
+
+            // 가격
+            product.setPrice(
+                    ReadBigDecimal("가격 > ")
+            );
+
+            // 안전재고
+            product.setReorderLevel(
+                    ReadInteger("안전재고 > ")
+            );
+
+            // 시리얼 관리 여부
+            product.setRequiresSerial(
+                    ReadBoolean("시리얼 관리 상품입니까? (Y/N) > ")
+            );
+
+
+            boolean result =
+                    productService.RegisterProduct(product);
+
+
+            if (result) {
+
+                System.out.println();
+                System.out.println("상품이 정상적으로 등록되었습니다.");
+
+            } else {
+
+                System.out.println();
+                System.out.println("상품 등록에 실패했습니다.");
+            }
+
+        } catch (Exception e) {
+
+            System.out.println(
+                    "입력 오류: " + e.getMessage()
+            );
+        }
+    }
+
+
+    // ============================================================
+    // 2번 메뉴 : 상품 수정
+    // 담당: 백종민
+    // ============================================================
+
+    private void UpdateProduct() {
+
+        System.out.println();
+        System.out.println(
+                "========================================"
+        );
+        System.out.println(
+                "              상품 수정"
+        );
+        System.out.println(
+                "========================================"
+        );
+
+
+        try {
+
+            Product product =
+                    new Product();
+
+
+            // 어떤 상품을 수정할지 선택
+            product.setProductId(
+                    ReadLong(
+                            "수정할 상품 ID > "
+                    )
+            );
+
+
+            // 새로운 상품명
+            product.setProductName(
+                    ReadRequiredString(
+                            "변경할 상품명 > "
+                    )
+            );
+
+
+            // 새로운 카테고리
+            product.setCategoryId(
+                    ReadLong(
+                            "변경할 카테고리 ID > "
+                    )
+            );
+
+
+            // 새로운 가격
+            product.setPrice(
+                    ReadBigDecimal(
+                            "변경할 가격 > "
+                    )
+            );
+
+
+            // 새로운 안전재고 기준
+            product.setReorderLevel(
+                    ReadInteger(
+                            "변경할 안전재고 > "
+                    )
+            );
+
+
+            // Service에 수정 요청
+            boolean result =
+                    productService
+                            .UpdateProduct(product);
+
+
+            if (result) {
+
+                System.out.println();
+                System.out.println(
+                        "상품이 정상적으로 수정되었습니다."
+                );
+
+            } else {
+
+                System.out.println();
+                System.out.println(
+                        "상품 수정에 실패했습니다."
+                );
+
+                System.out.println(
+                        "존재하지 않는 상품 ID인지 확인해 주세요."
+                );
+            }
+
+
+        } catch (Exception e) {
+
+            System.out.println(
+                    "상품 수정 오류: "
+                            + e.getMessage()
+            );
+        }
+    }
+
+    // ============================================================
+    // 판매 상태 변경
+    // 담당: 백종민
+    // ============================================================
+
+    private void ChangeSaleStatus() {
+
+        System.out.println();
+        System.out.println(
+                "========================================"
+        );
+        System.out.println(
+                "            판매 상태 변경"
+        );
+        System.out.println(
+                "========================================"
+        );
+
+
+        try {
+
+            // 상태를 변경할 상품 선택
+            Long productId =
+                    ReadLong(
+                            "상품 ID > "
+                    );
+
+
+            System.out.println();
+            System.out.println(
+                    "1. 판매중 (SELLING)"
+            );
+
+            System.out.println(
+                    "2. 판매중지 (STOPPED)"
+            );
+
+            System.out.print(
+                    "변경할 상태 > "
+            );
+
+
+            String input =
+                    scanner.nextLine().trim();
+
+
+            String saleStatus;
+
+
+            // 사용자가 선택한 번호를
+            // DB에서 사용하는 상태 문자열로 변환
+            switch (input) {
+
+                case "1":
+
+                    saleStatus = "SELLING";
+                    break;
+
+
+                case "2":
+
+                    saleStatus = "STOPPED";
+                    break;
+
+
+                default:
+
+                    System.out.println(
+                            "올바른 상태를 선택해 주세요."
+                    );
+
+                    return;
+            }
+
+
+            // Service에 판매 상태 변경 요청
+            boolean result =
+                    productService.ChangeSaleStatus(
+                            productId,
+                            saleStatus
+                    );
+
+
+            if (result) {
+
+                System.out.println();
+
+                System.out.println(
+                        "판매 상태가 "
+                                + saleStatus
+                                + " 상태로 변경되었습니다."
+                );
+
+
+            } else {
+
+                System.out.println();
+
+                System.out.println(
+                        "판매 상태 변경에 실패했습니다."
+                );
+
+                System.out.println(
+                        "존재하지 않는 상품 ID인지 확인해 주세요."
+                );
+            }
+
+
+        } catch (Exception e) {
+
+            System.out.println(
+                    "판매 상태 변경 오류: "
+                            + e.getMessage()
+            );
+        }
+    }
+
+    // ============================================================
+// 상품 삭제
+// 담당: 백종민
+// ============================================================
+
+    private void DeleteProduct() {
+
+        System.out.println();
+        System.out.println("========================================");
+        System.out.println("              상품 삭제");
+        System.out.println("========================================");
+
+
+        try {
+
+            // 삭제할 상품 선택
+            Long productId =
+                    ReadLong("삭제할 상품 ID > ");
+
+
+            // 실수로 삭제하는 것을 막기 위한 최종 확인
+            System.out.print(
+                    "정말 삭제하시겠습니까? (Y/N) > "
+            );
+
+            String confirm =
+                    scanner.nextLine()
+                            .trim()
+                            .toUpperCase();
+
+
+            if (!confirm.equals("Y")) {
+
+                System.out.println(
+                        "상품 삭제를 취소했습니다."
+                );
+
+                return;
+            }
+
+
+            // Service에서 존재 여부와 이력을 모두 검사
+            boolean result =
+                    productService.DeleteProduct(productId);
+
+
+            if (result) {
+
+                System.out.println();
+                System.out.println(
+                        "상품이 정상적으로 삭제되었습니다."
+                );
+
+            } else {
+
+                System.out.println();
+                System.out.println(
+                        "상품 삭제에 실패했습니다."
+                );
+            }
+
+
+        } catch (Exception e) {
+
+            // 존재하지 않는 상품 / 이력 있는 상품 등의 이유 출력
+            System.out.println();
+            System.out.println(
+                    "상품 삭제 실패: "
+                            + e.getMessage()
+            );
+        }
+    }
+
+
+    // ============================================================
+    // 화면 출력
+    // ============================================================
+
+    private void PrintMenu() {
+
+        System.out.println();
+        System.out.println("========================================");
+        System.out.println("          상품 / 카테고리 관리");
+        System.out.println("========================================");
+        System.out.println("1. 상품 등록");
+        System.out.println("2. 상품 수정");
+        System.out.println("3. 판매 상태 변경");
+        System.out.println("4. 상품 삭제");
+
+        // 이후 추가 예정
+        // 2. 상품 수정
+        // 3. 상품 삭제
+        // 4. 판매 상태 변경
+        // 5. 카테고리 관리
+
+        System.out.println("0. 이전");
+        System.out.println("----------------------------------------");
+        System.out.print("선택 > ");
+    }
+
+
+    // ============================================================
+    // 입력 Helper
+    // ============================================================
+
+    private String ReadRequiredString(String message) {
+
+        while (true) {
+
+            System.out.print(message);
+
+            String value =
+                    scanner.nextLine().trim();
+
+            if (!value.isBlank()) {
+                return value;
+            }
+
+            System.out.println(
+                    "값을 입력해 주세요."
+            );
+        }
+    }
+
+
+    private Long ReadLong(String message) {
+
+        while (true) {
+
+            try {
+
+                System.out.print(message);
+
+                return Long.parseLong(
+                        scanner.nextLine().trim()
+                );
+
+            } catch (NumberFormatException e) {
+
+                System.out.println(
+                        "숫자를 입력해 주세요."
+                );
+            }
+        }
+    }
+
+
+    private Integer ReadInteger(String message) {
+
+        while (true) {
+
+            try {
+
+                System.out.print(message);
+
+                return Integer.parseInt(
+                        scanner.nextLine().trim()
+                );
+
+            } catch (NumberFormatException e) {
+
+                System.out.println(
+                        "숫자를 입력해 주세요."
+                );
+            }
+        }
+    }
+
+
+    private BigDecimal ReadBigDecimal(String message) {
+
+        while (true) {
+
+            try {
+
+                System.out.print(message);
+
+                return new BigDecimal(
+                        scanner.nextLine().trim()
+                );
+
+            } catch (NumberFormatException e) {
+
+                System.out.println(
+                        "올바른 금액을 입력해 주세요."
+                );
+            }
+        }
+    }
+
+
+    private Boolean ReadBoolean(String message) {
+
+        while (true) {
+
+            System.out.print(message);
+
+            String input =
+                    scanner.nextLine()
+                            .trim()
+                            .toUpperCase();
+
+            if (input.equals("Y")) {
+                return true;
+            }
+
+            if (input.equals("N")) {
+                return false;
+            }
+
+            System.out.println(
+                    "Y 또는 N을 입력해 주세요."
+            );
+        }
+    }
+}

@@ -63,3 +63,18 @@ CREATE TABLE stock_adjustment (
     adjusted_by_user_id BIGINT NOT NULL REFERENCES app_user(user_id) ON DELETE RESTRICT,
     adjusted_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+-- 8. 장바구니관련 테이블 생성
+CREATE TABLE cart (
+    cart_id     BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    customer_id BIGINT UNIQUE REFERENCES customer(customer_id) ON DELETE CASCADE,
+    created_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE cart_item (
+    cart_item_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    cart_id      BIGINT NOT NULL REFERENCES cart(cart_id) ON DELETE CASCADE,
+    product_id   BIGINT NOT NULL REFERENCES product(product_id) ON DELETE CASCADE,
+    quantity     INTEGER NOT NULL CHECK (quantity > 0),
+    added_at     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (cart_id, product_id)
+);
