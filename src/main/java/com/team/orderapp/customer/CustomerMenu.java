@@ -595,6 +595,7 @@ public class CustomerMenu {
             System.out.println("3. 이메일(ID) 변경");
             System.out.println("4. 회원 삭제");
             System.out.println(Boolean.TRUE.equals(customer.getIsActive()) ? "5. 회원 비활성화" : "5. 회원 활성화");
+            System.out.println("6. 비밀번호 초기화");
             System.out.println("0. 뒤로가기 (p: 회원 관리 메뉴로 이동)");
             System.out.print("번호를 입력하세요: ");
 
@@ -619,12 +620,46 @@ public class CustomerMenu {
                         SetActiveStatus(customer, true);
                     }
                 }
+                case "6" -> ResetPassword(customer);
                 case "0" -> {
                     return;
                 }
                 default -> PrintInvalidChoiceMessage(choice);
             }
         }
+    }
+
+    /**
+     * 확인을 받은 뒤 회원의 비밀번호를 기본 비밀번호로 초기화합니다.
+     */
+    private void ResetPassword(Customer customer) {
+        System.out.print("\"" + customer.getCustomerName() + "\" 회원의 비밀번호를 초기화하시겠습니까? (y: 초기화, 0 또는 그 외 입력: 취소): ");
+        String confirm = scanner.nextLine().trim();
+        CheckMainMenuShortcut(confirm);
+        if (!"y".equalsIgnoreCase(confirm)) {
+            System.out.println("취소했습니다.");
+            return;
+        }
+
+        try {
+            if (!customerService.ResetPassword(customer)) {
+                System.out.println("비밀번호 초기화에 실패했습니다.");
+                return;
+            }
+        } catch (IllegalStateException e) {
+            System.out.println(DB_ERROR_MESSAGE);
+            return;
+        } catch (Exception e) {
+            System.out.println(COMMUNICATION_ERROR_MESSAGE);
+            return;
+        }
+
+        System.out.println("\n비밀번호가 \"" + CustomerService.DEFAULT_PASSWORD + "\"(으)로 초기화되었습니다. 회원에게 로그인 후 비밀번호를 변경하도록 안내해주세요.");
+        System.out.print("\n0을 입력하면 회원 관리 메뉴로 이동: ");
+        while (!CANCEL_INPUT.equals(scanner.nextLine().trim())) {
+            System.out.print("0을 입력하면 회원 관리 메뉴로 이동: ");
+        }
+        throw new ReturnToMainMenu();
     }
 
     /**
