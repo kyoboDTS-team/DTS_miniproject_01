@@ -190,6 +190,24 @@ public class ProductService {
             return productDao.FindByPriceRange(minPrice, maxPrice);
         }
     }
+    public List<Product> FindProductsByName(String keyword) {
+
+        if (keyword == null || keyword.isBlank()) {
+            throw new IllegalArgumentException(
+                    "검색할 상품명을 입력해 주세요."
+            );
+        }
+
+        try (SqlSession session = OpenSession()) {
+
+            ProductDao productDao =
+                    GetProductDao(session);
+
+            return productDao.FindByProductName(
+                    keyword.trim()
+            );
+        }
+    }
 
     //선택한 카테고리 가격 범위 조회
     public List<Product> FindByCategoryAndPriceRange(
