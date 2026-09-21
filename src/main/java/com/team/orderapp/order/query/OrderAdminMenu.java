@@ -20,7 +20,7 @@ import java.util.Scanner;
  *
  * 관리자는 주문 및 반품 완료 내역을 확인하는 역할
  */
-public class OrderAdminMenu {
+public class    OrderAdminMenu {
 
     private final Scanner scanner;
 

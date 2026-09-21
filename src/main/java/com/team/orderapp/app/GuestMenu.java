@@ -42,17 +42,15 @@ public class GuestMenu {
             switch (input) {
 
                 case "1":
-                    // TODO: 상품 전체 조회 메뉴 연결
-                    // 예: productMenu.ShowAllProducts();
+                    //작성자: 박형준
                     productMenu.ShowAllProducts();
-                    System.out.println("[TODO] 상품 전체 조회");
+
                     break;
 
                 case "2":
-                    // TODO: 상품 조건 조회 메뉴 연결
-                    // 카테고리 / 최소가격 / 최대가격
+                    //작성자: 박형준
                     productMenu.ShowProductsByCondition();
-                    System.out.println("[TODO] 상품 조건 조회");
+
                     break;
 
                 case "3":
@@ -61,9 +59,9 @@ public class GuestMenu {
                     break;
 
                 case "4":
-                    // TODO: 비회원 주문 조회 메뉴 연결
+                    //작성자: 박형준
                     orderQueryMenu.ShowGuestOrder();
-                    System.out.println("[TODO] 비회원 주문 조회");
+
                     break;
 
                 case "5":
