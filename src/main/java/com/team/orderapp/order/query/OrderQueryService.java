@@ -277,7 +277,7 @@ public class OrderQueryService {
             Optional<OrderDetailView> result =
                     orderQueryDao
                             .FindDetailHeaderByOrderNo(
-                                    orderNo.trim()
+                                    orderNo.trim().toUpperCase()
                             );
 
             if (result.isEmpty()) {
