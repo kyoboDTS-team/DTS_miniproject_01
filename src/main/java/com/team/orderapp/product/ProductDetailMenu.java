@@ -1,5 +1,7 @@
 package com.team.orderapp.product;
 
+import com.team.orderapp.cart.CartService;
+
 import java.text.NumberFormat;
 import java.util.Locale;
 import java.util.Scanner;
@@ -7,9 +9,11 @@ import java.util.Scanner;
 public class ProductDetailMenu {
 
     private final Scanner scanner;
+    private final CartService cartService;
 
     public ProductDetailMenu(Scanner scanner) {
         this.scanner = scanner;
+        this.cartService = new CartService();
     }
 
 
@@ -157,10 +161,8 @@ public class ProductDetailMenu {
          * cartService.AddProduct(product, quantity);
          */
 
+        cartService.AddProduct(product, quantity);
         System.out.println();
-        System.out.println(
-                "[TODO] CartService 연결이 필요합니다."
-        );
         System.out.println(
                 product.getProductName()
                         + " " + quantity
