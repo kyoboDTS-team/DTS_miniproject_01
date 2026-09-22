@@ -133,7 +133,7 @@ public class StockMenu {
 
     private void AdjustStock() {
 
-        ConsoleUi.ClearScreen();
+        //ConsoleUi.ClearScreen();
         ConsoleUi.ScreenHeader("ADMIN", "재고 입고 / 조정");
 
 
@@ -587,6 +587,9 @@ public class StockMenu {
 
             ConsoleUi.Error("재고 입고 실패: " + e.getMessage());
         }
+
+        // 읽을 시간을 준다. 이게 없으면 메뉴 루프가 바로 돌아 ClearScreen이 결과를 지운다.
+        ConsoleUi.PressEnter(scanner);
     }
 
     // ============================================================
