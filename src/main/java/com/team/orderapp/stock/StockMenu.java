@@ -183,6 +183,9 @@ public class StockMenu {
             System.out.println();
             ConsoleUi.Error("재고 변경 실패: " + e.getMessage());
         }
+
+        // 읽을 시간을 준다. 이게 없으면 메뉴 루프가 바로 돌아 ClearScreen이 결과를 지운다.
+        ConsoleUi.PressEnter(scanner);
     }
 
 
@@ -230,6 +233,9 @@ public class StockMenu {
             System.out.println();
             ConsoleUi.Error("시리얼 등록 실패: " + e.getMessage());
         }
+
+        // 읽을 시간을 준다. 이게 없으면 메뉴 루프가 바로 돌아 ClearScreen이 결과를 지운다.
+        ConsoleUi.PressEnter(scanner);
     }
 
 
@@ -261,6 +267,7 @@ public class StockMenu {
             if (units.isEmpty()) {
 
                 ConsoleUi.Error("등록된 시리얼이 없습니다.");
+                ConsoleUi.PressEnter(scanner);
 
                 return;
             }
@@ -293,6 +300,9 @@ public class StockMenu {
 
             ConsoleUi.Error("시리얼 조회 실패: " + e.getMessage());
         }
+
+        // 읽을 시간을 준다. 이게 없으면 메뉴 루프가 바로 돌아 ClearScreen이 결과를 지운다.
+        ConsoleUi.PressEnter(scanner);
     }
 
     // ============================================================
@@ -682,20 +692,31 @@ public class StockMenu {
     }
 
     private void ShowAllAdjustmentHistory() {
+
+        ConsoleUi.ClearScreen();
+        ConsoleUi.ScreenHeader("STOCK / HISTORY", "전체 재고 변경 이력");
+
         try {
             List<StockAdjustmentHistory> histories =
                     stockService.FindAllAdjustmentHistory();
 
             System.out.println();
-            ConsoleUi.Info("================ 전체 재고 변경 이력 ================");
             PrintAdjustmentHistory(histories);
 
         } catch (Exception e) {
             ConsoleUi.Error("재고 변경 이력 조회 실패: " + e.getMessage());
         }
+
+        // 읽을 시간을 준다. 이게 없으면 메뉴 루프가 바로 돌아 ClearScreen이 결과를 지운다.
+        ConsoleUi.PressEnter(scanner);
     }
 
     private void ShowAdjustmentHistoryByProduct() {
+
+        ConsoleUi.ClearScreen();
+        ConsoleUi.ScreenHeader("STOCK / HISTORY", "상품별 재고 변경 이력");
+
+        System.out.println();
         ConsoleUi.Prompt("상품 ID");
         String input = ConsoleUi.Choice(scanner.nextLine());
 
@@ -705,6 +726,7 @@ public class StockMenu {
             Product product = stockService.FindProductById(productId);
             if (product == null) {
                 ConsoleUi.Info("존재하지 않는 상품입니다.");
+                ConsoleUi.PressEnter(scanner);
                 return;
             }
 
@@ -712,8 +734,7 @@ public class StockMenu {
                     stockService.FindAdjustmentHistoryByProduct(productId);
 
             System.out.println();
-            ConsoleUi.Info("상품: " + product.getProductName());
-            ConsoleUi.Info("================ 상품별 재고 변경 이력 ================");
+            ConsoleUi.Field("상품", product.getProductName(), 12);
             PrintAdjustmentHistory(histories);
 
         } catch (NumberFormatException e) {
@@ -721,9 +742,17 @@ public class StockMenu {
         } catch (Exception e) {
             ConsoleUi.Error("재고 변경 이력 조회 실패: " + e.getMessage());
         }
+
+        // 읽을 시간을 준다. 이게 없으면 메뉴 루프가 바로 돌아 ClearScreen이 결과를 지운다.
+        ConsoleUi.PressEnter(scanner);
     }
 
     private void ShowAdjustmentHistoryByPeriod() {
+
+        ConsoleUi.ClearScreen();
+        ConsoleUi.ScreenHeader("STOCK / HISTORY", "기간별 재고 변경 이력");
+
+        System.out.println();
         ConsoleUi.Prompt("시작일 (YYYY-MM-DD)");
         String startInput = scanner.nextLine().trim();
 
@@ -739,7 +768,6 @@ public class StockMenu {
 
             System.out.println();
             ConsoleUi.Field("조회 기간", startDate + " ~ " + endDate, 12);
-            ConsoleUi.Info("================ 기간별 재고 변경 이력 ================");
             PrintAdjustmentHistory(histories);
 
         } catch (DateTimeParseException e) {
@@ -747,6 +775,9 @@ public class StockMenu {
         } catch (Exception e) {
             ConsoleUi.Error("재고 변경 이력 조회 실패: " + e.getMessage());
         }
+
+        // 읽을 시간을 준다. 이게 없으면 메뉴 루프가 바로 돌아 ClearScreen이 결과를 지운다.
+        ConsoleUi.PressEnter(scanner);
     }
 
     private void PrintAdjustmentHistory(List<StockAdjustmentHistory> histories) {
