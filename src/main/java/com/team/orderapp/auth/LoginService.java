@@ -26,10 +26,11 @@ public class LoginService {
     private static final String LOGIN_FAILED_MESSAGE = "이메일 또는 비밀번호가 올바르지 않습니다.";
 
     /**
-     * 로그인을 처리합니다. 검증에 모두 성공하면 이전 장바구니를 버리고 세션에 사용자 정보를 기록합니다.
+     * 로그인을 처리합니다. 검증에 모두 성공하면 비회원 장바구니를 버리고, 회원이면
+     * 그 회원의 기존 장바구니를 불러온 뒤 세션에 사용자 정보를 기록합니다.
      *
      * 조회만 하므로 commit이 없고, 두 DAO를 한 SqlSession에서 꺼내 씁니다.
-     * 장바구니 초기화는 검증이 끝난 뒤에 합니다 — 비밀번호를 잘못 입력한 비회원의
+     * 장바구니 처리는 검증이 끝난 뒤에 합니다 — 비밀번호를 잘못 입력한 비회원의
      * 장바구니가 사라지면 안 되기 때문입니다(T03).
      *
      * @param email    입력한 이메일 (대소문자·앞뒤 공백은 여기서 정리)
@@ -84,8 +85,16 @@ public class LoginService {
             }
         }
 
-        // 여기서부터는 검증이 모두 끝난 상태. 사용자가 바뀌었으므로 이전 장바구니를 버린다.
-        new CartService().ResetCart();
+        // 여기서부터는 검증이 모두 끝난 상태. 사용자가 바뀌었으므로 비회원 장바구니는 버린다.
+        // (비회원 장바구니는 다음 로그인까지 유지하지 않기로 했다.)
+        CartService cartService = new CartService();
+        cartService.ResetCart();
+
+        // 회원이면 그 회원 소유로 저장된 기존 장바구니를 불러온다.
+        // (cart.customer_id로 남아 있으므로, 로그아웃 후 다시 로그인해도 담아 둔 게 유지된다.)
+        if (role == UserRole.CUSTOMER) {
+            cartService.LoadCustomerCart(customerId);
+        }
 
         LoginSession.Login(userId, normalizedEmail, role, customerId);
 
@@ -93,12 +102,15 @@ public class LoginService {
     }
 
     /**
-     * 로그아웃을 처리합니다. 담아 둔 장바구니를 버린 뒤 세션을 비웁니다.
+     * 로그아웃을 처리합니다. 세션을 비우고 장바구니 번호를 잊습니다.
      * 로그인하지 않은 상태에서 불러도 아무 일도 일어나지 않습니다.
+     *
+     * 회원 장바구니는 DB에서 지우지 않습니다(ReleaseCart) — cart.customer_id로
+     * 그 회원 소유임이 남아 있어야, 다음에 로그인했을 때 다시 불러올 수 있습니다.
      */
     public void Logout() {
 
-        new CartService().ResetCart();
+        new CartService().ReleaseCart();
 
         LoginSession.Logout();
     }
