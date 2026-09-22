@@ -1,0 +1,127 @@
+﻿<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+<head><meta charset='utf-8'><title>05_Terminal_Market_프로젝트_총보고서</title>
+<style>
+body { font-family: '맑은 고딕', 'Malgun Gothic', Arial, sans-serif; line-height: 1.7; color: #1e293b; margin: 40px; }
+h1 { color: #0f172a; border-bottom: 3px solid #2563eb; padding-bottom: 10px; font-size: 22pt; font-weight: bold; margin-top: 15px; }
+h2 { color: #1e40af; border-bottom: 1.5px solid #93c5fd; padding-bottom: 6px; margin-top: 30px; font-size: 16pt; font-weight: bold; }
+h3 { color: #0369a1; background: #e0f2fe; padding: 8px 14px; border-left: 5px solid #0284c7; margin-top: 22px; font-size: 13pt; font-weight: bold; }
+h4 { color: #047857; margin-top: 14px; margin-bottom: 4px; font-size: 11pt; font-weight: bold; }
+blockquote { background: #f8fafc; border-left: 4px solid #3b82f6; margin: 12px 0; padding: 10px 16px; font-size: 10.5pt; color: #0f172a; }
+ul { margin: 6px 0; padding-left: 24px; color: #334155; }
+li { margin-bottom: 4px; font-size: 10pt; }
+table { border-collapse: collapse; width: 100%; margin: 18px 0; font-size: 9.5pt; }
+th, td { border: 1px solid #cbd5e1; padding: 8px 12px; text-align: left; }
+th { background: #f1f5f9; font-weight: bold; color: #0f172a; }
+pre { background: #f1f5f9; border: 1px solid #cbd5e1; padding: 12px; font-family: 'Consolas', monospace; font-size: 9pt; color: #0f172a; line-height: 1.4; white-space: pre-wrap; }
+code { background: #f1f5f9; padding: 2px 5px; font-family: 'Consolas', monospace; font-size: 9.5pt; color: #b91c1c; }
+hr { border: 0; height: 1px; background: #cbd5e1; margin: 25px 0; }
+p { margin: 6px 0; font-size: 10pt; }
+</style></head><body>
+<h1>[종합 산출물] TERMINAL MARKET 프로젝트 최종 총보고서 (Final Project Report)</h1>
+<hr/>
+<h2>1. 프로젝트 개요 및 배경</h2>
+<table>
+<tr><td>항목</td><td>내용</td></tr>
+<tr><td><b>프로젝트명</b></td><td><b>TERMINAL MARKET (터미널 마켓)</b></td></tr>
+<tr><td><b>프로젝트 형태</b></td><td>Java Console 기반 엔터프라이즈 상품 &#183; 주문 &#183; 재고 관리 시스템</td></tr>
+<tr><td><b>개발 기간</b></td><td>2026.09.16 ~ 2026.09.22 (총 7일간)</td></tr>
+<tr><td><b>개발 팀명</b></td><td><b>TMT (Too Much Technology)</b></td></tr>
+<tr><td><b>참여 인원</b></td><td>총 4명 (백종민, 김상진, 박형준, 이태은)</td></tr>
+<tr><td><b>주요 기술</b></td><td>Java 21, MyBatis 3.5.15, PostgreSQL 16, Gradle, Lombok, Git</td></tr>
+<tr><td><b>최종 이행률</b></td><td><b>95%</b> (필수 요구사항 100% 충족 + 선택 및 자체 확장 다수 구현)</td></tr>
+</table>
+<h3>1.1 프로젝트 추진 배경</h3>
+<ul><li>대다수의 콘솔 기반 프로젝트는 단일 데이터 테이블 중심의 조회/수정/삭제(CRUD) 수준에 그치기 쉽습니다.</li></ul>
+<ul><li>저희 TMT 팀은 실제 상용 커머스 플랫폼과 물류창고(WMS/ERP)가 동작하는 백엔드 프로세스를 체감하기 위해, <b>&quot;비회원/회원 주문 결제 → 단일 트랜잭션 재고 차감 → 단품별 고유 시리얼 번호 자동 출고 매핑 → 주문 반품 시 재고 및 시리얼 상태 원복 → 재고 감사 이력 및 정합성 검증&quot;</b>으로 이어지는 비즈니스 풀사이클 시스템을 직접 설계&#183;구축했습니다.</li></ul>
+<hr/>
+<h2>2. 프로젝트 수행 조직 및 역할 분담 (R&amp;R)</h2>
+<table>
+<tr><td>팀원명</td><td>담당 영역</td><td>상세 수행 내역 및 기여도</td></tr>
+<tr><td><b>백종민</b></td><td><b>관리자 기능 &amp; 프로젝트 관리</b></td><td>• 프로젝트 전체 문서화 총괄 및 깃허브(GitHub) 형상관리 리드&lt;br&gt;• 관리자 상품 등록/수정, 계층형 카테고리 관리 기능 구현&lt;br&gt;• 재고 수량 조정 및 단품 시리얼 개별 등록 백오피스 구축&lt;br&gt;• 매출 통계 대시보드(누적/당일 매출, 랭킹) 및 CSV 파일 연동</td></tr>
+<tr><td><b>김상진</b></td><td><b>인증 &amp; 장바구니 &amp; 주문 트랜잭션</b></td><td>• 세션 기반 인증 체계(<code>LoginSession</code>) 및 권한 분기 구축&lt;br&gt;• 사용자별 독립 메모리 장바구니(<code>Cart</code>, <code>CartItem</code>) 개발&lt;br&gt;• 복수 품목 일괄 주문 결제 트랜잭션 로직(<code>OrderCommandService</code>) 구현&lt;br&gt;• 주문 반품 시 재고 환원 및 시리얼 판매가능 복구 트랜잭션 개발</td></tr>
+<tr><td><b>박형준</b></td><td><b>기능 통합 &amp; 상품/내역 조회</b></td><td>• 모듈 간 결합 및 충돌 해결을 통한 전체 기능 통합(Integration)&lt;br&gt;• 계층형 카테고리 탐색 및 복합 조건(가격/키워드) 상품 검색 구현&lt;br&gt;• 비회원/회원/관리자 대상 주문 이력 및 상세 시리얼 조회 개발&lt;br&gt;• 콘솔 표준 헤더 및 UI 렌더링 템플릿 표준화</td></tr>
+<tr><td><b>이태은</b></td><td><b>회원가입 &amp; 고객 관리 &amp; 마이페이지</b></td><td>• 정규식 기반 이메일/비밀번호/연락처 엄격 유효성 검증 체계 수립&lt;br&gt;• SHA-256 솔트 단방향 비밀번호 해싱(<code>PasswordHasher</code>) 적용&lt;br&gt;• 회원 정보 조회, 프로필(이름/연락처) 수정 및 세션 실시간 동기화&lt;br&gt;• 마이페이지 비밀번호 재확인 및 변경 프로세스 구축</td></tr>
+</table>
+<hr/>
+<h2>3. 개발 환경 및 기술 스택</h2>
+<pre>[ Tech Stack &amp; Infrastructure ]
+• Language       : Java 21 (LTS) - 최신 언어 스펙 및 가상 스레드 호환
+• Database       : PostgreSQL 16 - 관계형 DB, IDENTITY, CHECK 제약조건
+• Persistence    : MyBatis 3.5.15 - 복잡한 조인 및 트랜잭션 SQL 매핑
+• Build Tool     : Gradle 8.x
+• Library        : Lombok, PostgreSQL JDBC Driver
+• VCS &amp; Collab   : Git, GitHub (Git-Flow 변형 브랜치 전략), Figma
+</pre>
+<hr/>
+<h2>4. 시스템 아키텍처 및 핵심 설계</h2>
+<h3>4.1 4계층 레이어드 아키텍처 (Layered Architecture)</h3>
+<ul><li><b>Presentation Layer</b>: <code>*Menu</code>, <code>ConsoleUi</code> - 화면 출력 및 콘솔 입력 파싱</li></ul>
+<ul><li><b>Business Layer</b>: <code>*Service</code>, <code>LoginSession</code>, <code>OrderNoGenerator</code> - 업무 규칙 및 트랜잭션</li></ul>
+<ul><li><b>Persistence Layer</b>: <code>*Dao</code> (MyBatis Mapper 인터페이스 및 XML) - SQL 질의</li></ul>
+<ul><li><b>Domain Model Layer</b>: Entity, DTO, Enum - 데이터 구조체</li></ul>
+<h3>4.2 적용된 디자인 패턴</h3>
+<p>1. <b>팩토리 패턴 (Factory Pattern) - <code>DbConnectionFactory</code></b>:</p>
+<p>   * 복잡한 DB 설정(<code>db.properties</code>)과 MyBatis <code>SqlSessionFactory</code> 빌드 과정을 캡슐화하여, 외부에서는 <code>DbConnectionFactory.OpenSession()</code>만으로 표준 세션을 발급받도록 구현.</p>
+<p>2. <b>싱글톤 패턴 변형 (Singleton Pattern) - <code>LoginSession</code></b>:</p>
+<p>   * 전역에서 단 하나의 사용자 로그인 상태를 유지하고, 역할(<code>ADMIN</code>, <code>CUSTOMER</code>)에 따라 안전하게 인가 분기.</p>
+<p>3. <b>의존성 주입 (Dependency Injection) - <code>Scanner</code> 및 <code>Service</code></b>:</p>
+<p>   * <code>Main</code>에서 단일 <code>Scanner</code>를 생성해 모든 메뉴에 주입함으로써 <code>System.in</code> 스트림 조기 종료 오류를 방지.</p>
+<h3>4.3 데이터베이스 9개 테이블 구성</h3>
+<ul><li>계정 및 회원: <code>app_user</code>, <code>customer</code> (1:1 분리)</li></ul>
+<ul><li>상품 및 재고: <code>category</code> (Self FK 계층형), <code>product</code>, <code>product_unit</code> (고유 시리얼), <code>stock_adjustment</code> (감사 로그)</li></ul>
+<ul><li>주문 및 물류: <code>orders</code> (비회원 수용), <code>order_item</code> (스냅샷 단가), <code>order_item_unit</code> (시리얼 배정 이력)</li></ul>
+<hr/>
+<h2>5. 개발 로드맵 및 일정 수행 성과</h2>
+<pre>  9/16 - 9/17             9/18 - 9/20               9/21                  9/22
+┌──────────────┐       ┌──────────────┐       ┌──────────────┐       ┌──────────────┐
+│ PROTO 단계   │ ────&gt; │ ALPHA 단계   │ ────&gt; │ BETA 단계    │ ────&gt; │ RELEASE 단계 │
+│ 기획/DB/설계 │       │ 팀원별 기능구현│      │ 기능통합 / QA│       │최종검증/발표 │
+└──────────────┘       └──────────────┘       └──────────────┘       └──────────────┘
+</pre>
+<p>1. <b>PROTO (9/16 - 9/17)</b>: 요구사항 정의서, ERD v0.3 설계, DB 스키마 생성 및 MyBatis 인프라 셋업 완료.</p>
+<p>2. <b>ALPHA (9/18 - 9/20)</b>: 4인의 팀원이 인증, 장바구니/주문, 상품조회, 관리자 도메인을 병렬 개발.</p>
+<p>3. <b>BETA (9/21)</b>: 단일 메인 진입점 통합, 예외 처리 통일, 통합 QA 체크리스트 전수 검증 수행.</p>
+<p>4. <b>RELEASE (9/22)</b>: 최종 회귀 테스트 통과, 발표 자료(PPT) 및 대본 완성, 프로젝트 최종 배포.</p>
+<hr/>
+<h2>6. 품질 관리 및 QA 테스트 결과</h2>
+<ul><li><b>QA 수행 방식</b>: 사전 정의된 QA 체크리스트(30여 개 케이스)를 바탕으로 정상 흐름과 비정상 엣지 케이스를 교차 검증.</li></ul>
+<ul><li><b>주요 검증 영역 및 결과</b>:</li></ul>
+<p>  1. <b>입력값 방어</b>: 숫자 입력창에 문자열 입력 시 크래시 없이 재입력 유도 확인.</p>
+<p>  2. <b>재고 수량 초과 주문</b>: 보유 재고보다 많은 수량 구매 시도시 트랜잭션 롤백 및 에러 통보 확인.</p>
+<p>  3. <b>중복 반품 차단</b>: 이미 <code>RETURNED</code> 처리된 주문에 대해 재반품 시도 시 차단 확인.</p>
+<p>  4. <b>시리얼 정합성 검증</b>: 출고된 시리얼 개수만큼 재고가 차감되고, 반품 시 정확히 해당 시리얼이 <code>AVAILABLE</code>로 원복됨을 확인.</p>
+<ul><li><b>QA 결과 요약</b>: 총 32개 테스트 시나리오 <b>전원 PASS (100% 통과)</b>.</li></ul>
+<hr/>
+<h2>7. 트러블 슈팅 및 문제 해결 사례</h2>
+<h3>[사례 1] 메뉴 이동 중 `NoSuchElementException` 발생 (Scanner 스트림 오류)</h3>
+<ul><li><b>문제 상황</b>: 비회원 메뉴에서 회원 로그인 화면 등으로 메뉴를 전환할 때 프로그램이 강제 종료됨.</li></ul>
+<ul><li><b>원인 분석</b>: 각 메뉴 클래스에서 <code>new Scanner(System.in)</code>을 생성하고 메뉴를 빠져나올 때 <code>scanner.close()</code>를 호출하여 자바 JVM의 표준 입력 스트림 <code>System.in</code> 자체가 완전히 닫혀버림.</li></ul>
+<ul><li><b>해결책</b>: <code>Main</code> 클래스에서 단 하나의 <code>Scanner</code> 인스턴스만 생성하고, 모든 서브 메뉴 클래스 생성자에 DI(의존성 주입) 방식으로 공유하도록 아키텍처를 전면 리팩토링하여 해결.</li></ul>
+<h3>[사례 2] 장바구니 상품 담기 후 메인 헤더 수량 미반영 (연결 누락)</h3>
+<ul><li><b>문제 상황</b>: 상품 상세 화면에서 담기 성공 메시지는 출력되나 헤더의 <code>장바구니(0)</code>가 증가하지 않음.</li></ul>
+<ul><li><b>원인 분석</b>: <code>ProductDetailMenu</code>에서 사용자 입력 검증 후 <code>CartService.addProduct()</code> 비즈니스 로직을 호출하는 코드가 누락된 단순 UI-Service 계층 간 연결 누락 버그.</li></ul>
+<ul><li><b>해결책</b>: UI와 Service의 의존 관계를 재정비하고 메서드 호출을 연결하여 실시간 수량 동기화 완료.</li></ul>
+<h3>[사례 3] 관리자 재고 입고 시 외래키(FK) 제약조건 위반</h3>
+<ul><li><b>문제 상황</b>: 관리자가 재고를 입고할 때 <code>stock_adjustment</code> 테이블에서 <code>FK Violation</code> 발생.</li></ul>
+<ul><li><b>원인 분석</b>: 초기 프로토타입에 하드코딩해 두었던 더미 <code>admin</code> 식별자가 실제 <code>app_user</code>의 PK와 불일치함.</li></ul>
+<ul><li><b>해결책</b>: <code>LoginSession</code> 객체에서 현재 로그인된 관리자의 실제 <code>userId</code> PK 값을 동적으로 바인딩하도록 수정하여 데이터 무결성 보장.</li></ul>
+<hr/>
+<h2>8. 최종 목표 대비 달성도 평가</h2>
+<pre>[ 최종 목표 대비 이행률 분석 ]
+┌─────────────────────────────────────────────────────────────┐
+│ ■ 기본 필수 미션 (100% 달성)                                │
+│   - 상품/고객/주문 CRUD, 검색, DB 연동, 로그인/권한, 상태값    │
+├─────────────────────────────────────────────────────────────┤
+│ ■ 선택 및 자체 확장 기능 (대거 현실화)                      │
+│   - 세션 장바구니, 비회원 주문, 단품 고유 시리얼 번호 추적,  │
+│   - 주문 반품 트랜잭션, 재고 정합성 자동 검사기,            │
+│   - 관리자 통합 매출 통계 대시보드, 대용량 CSV 입출력       │
+├─────────────────────────────────────────────────────────────┤
+│ ★ 최종 종합 이행률: 95% 달성                               │
+└─────────────────────────────────────────────────────────────┘
+</pre>
+<hr/>
+<h2>9. 종합 평가 및 결론</h2>
+<ul><li>본 프로젝트는 콘솔 애플리케이션이라는 한정된 UI 환경 속에서도, <b>백엔드 엔지니어링의 본질인 트랜잭션 무결성, 객체지향 아키텍처, 그리고 복잡한 도메인 모델링</b>을 깊이 있게 구현해 낸 성공적인 프로젝트였습니다.</li></ul>
+<ul><li>특히 팩토리 패턴을 비롯한 디자인 패턴의 실전 적용과 팀원 간의 유기적인 R&amp;R 협업을 통해, 일정 지연 없이 상용 소프트웨어 수준의 완성도를 달성했습니다.</li></ul>
+</body></html>
