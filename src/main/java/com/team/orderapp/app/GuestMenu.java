@@ -3,6 +3,7 @@ package com.team.orderapp.app;
 import com.team.orderapp.auth.*;
 import com.team.orderapp.cart.CartMenu;
 import com.team.orderapp.cart.CartService;
+import com.team.orderapp.common.ConsoleUi;
 import com.team.orderapp.order.command.OrderCommandMenu;
 import com.team.orderapp.order.query.OrderQueryMenu;
 import com.team.orderapp.product.ProductMenu;
@@ -49,7 +50,7 @@ public class GuestMenu {
 
             PrintMenu();
 
-            String input = scanner.nextLine().trim();
+            String input = ConsoleUi.Choice(scanner.nextLine());
 
             switch (input) {
 
@@ -106,13 +107,13 @@ public class GuestMenu {
                     break;
 
                 case "0":
-                    System.out.println("프로그램을 종료합니다.");
+                    ConsoleUi.ClearScreen();
+                    ConsoleUi.Info("프로그램을 종료합니다.");
                     return;
 
                 default:
-                    System.out.println(
-                            "올바른 메뉴 번호를 입력해 주세요."
-                    );
+                    ConsoleUi.InvalidMenu();
+                    ConsoleUi.PressEnter(scanner);
             }
         }
     }
@@ -146,25 +147,33 @@ public class GuestMenu {
 
     private void PrintMenu() {
 
+        int cartCount = cartService.GetCartCount();
+
+        ConsoleUi.ClearScreen();
+
+        ConsoleUi.MainHeader(
+                ConsoleUi.InfoLine("비회원", null),
+                ConsoleUi.CartLine(cartCount)
+        );
+
+        ConsoleUi.Section("상품");
+        ConsoleUi.MenuItem("01", "전체 상품 조회");
+        ConsoleUi.MenuItem("02", "상품 조건 검색");
+        ConsoleUi.MenuItem("03", "장바구니", ConsoleUi.CartBadge(cartCount));
+
+        ConsoleUi.Section("주문");
+        ConsoleUi.MenuItem("04", "비회원 주문 조회");
+        ConsoleUi.MenuItem("07", "반품");
+
+        ConsoleUi.Section("계정");
+        ConsoleUi.MenuItem("05", "로그인");
+        ConsoleUi.MenuItem("06", "회원가입");
+
+        ConsoleUi.Section("시스템");
+        ConsoleUi.MenuItem("00", "종료");
+
         System.out.println();
-        System.out.println("========================================");
-        System.out.println("             TERMINAL MARKET");
-        System.out.println("----------------------------------------");
-
-        // TODO: Cart 구현 완료 후 실제 장바구니 총 수량으로 변경
-        System.out.println("장바구니(" + cartService.GetCartCount() + ")");
-
-        System.out.println("========================================");
-        System.out.println("1. 상품 전체 조회");
-        System.out.println("2. 상품 조건 조회 (카테고리 / 가격)");
-        System.out.println("3. 장바구니 보기");
-        System.out.println("4. 비회원 주문 조회");
-        System.out.println("5. 로그인");
-        System.out.println("6. 회원가입");
-        System.out.println("7. 반품");
-        System.out.println("0. 종료");
-        System.out.println("----------------------------------------");
-        System.out.print("선택 > ");
+        ConsoleUi.Prompt("선택");
     }
 
 

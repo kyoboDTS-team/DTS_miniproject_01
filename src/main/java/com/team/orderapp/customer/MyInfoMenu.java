@@ -1,5 +1,6 @@
 package com.team.orderapp.customer;
 
+import com.team.orderapp.common.ConsoleUi;
 import com.team.orderapp.order.query.OrderSummaryView;
 
 import java.sql.SQLException;
@@ -21,6 +22,9 @@ public class MyInfoMenu {
     private static final String PHONE_PATTERN = "^01[016789]-?\\d{3,4}-?\\d{4}$";
     private static final int EMAIL_MAX_LENGTH = 254;
     private static final int NAME_MAX_LENGTH = 50;
+
+    // 연속 입력 화면에서 필드 이름 칸의 너비 (계획서 7장)
+    private static final int PROMPT_WIDTH = 18;
 
     private final Scanner scanner;
     private String email;
@@ -54,34 +58,43 @@ public class MyInfoMenu {
         try {
             found = customerService.FindByEmail(email);
         } catch (IllegalStateException e) {
-            System.out.println(DB_ERROR_MESSAGE);
+            ConsoleUi.Error(DB_ERROR_MESSAGE);
             return true;
         } catch (Exception e) {
-            System.out.println(COMMUNICATION_ERROR_MESSAGE);
+            ConsoleUi.Error(COMMUNICATION_ERROR_MESSAGE);
             return true;
         }
 
         if (found.isEmpty()) {
-            System.out.println("내 정보를 찾을 수 없습니다.");
+            ConsoleUi.Error("내 정보를 찾을 수 없습니다.");
             return true;
         }
 
         Customer customer = found.get();
 
         while (true) {
-            System.out.println("\n=== 내 정보 조회/수정 ===");
-            System.out.println("이름     : " + customer.getCustomerName());
-            System.out.println("이메일   : " + customer.getEmail());
-            System.out.println("전화번호 : " + customer.getPhone());
-            System.out.println("1. 이름 변경");
-            System.out.println("2. 전화번호 변경");
-            System.out.println("3. 이메일(ID) 변경");
-            System.out.println("4. 비밀번호 변경");
-            System.out.println("5. 회원 탈퇴");
-            System.out.println("0. 뒤로가기");
-            System.out.print("번호를 입력하세요: ");
+            ConsoleUi.ClearScreen();
+            ConsoleUi.ScreenHeader("MY INFO", "내 정보 조회 / 수정");
 
-            String choice = scanner.nextLine().trim();
+            System.out.println();
+            ConsoleUi.Field("이름", customer.getCustomerName(), 10);
+            ConsoleUi.Field("이메일", customer.getEmail(), 10);
+            ConsoleUi.Field("연락처", customer.getPhone(), 10);
+
+            ConsoleUi.Section("내 정보 수정");
+            ConsoleUi.MenuItem("01", "이름 변경");
+            ConsoleUi.MenuItem("02", "연락처 변경");
+            ConsoleUi.MenuItem("03", "이메일(ID) 변경");
+            ConsoleUi.MenuItem("04", "비밀번호 변경");
+
+            ConsoleUi.Section("계정");
+            ConsoleUi.MenuItem("05", "회원 탈퇴");
+            ConsoleUi.MenuItem("00", "뒤로가기");
+
+            System.out.println();
+            ConsoleUi.Prompt("선택");
+
+            String choice = ConsoleUi.Choice(scanner.nextLine());
             switch (choice) {
                 case "1" -> UpdateName(customer);
                 case "2" -> UpdatePhone(customer);
@@ -105,7 +118,7 @@ public class MyInfoMenu {
      */
     private boolean IsCancelled(String input) {
         if (CANCEL_INPUT.equals(input)) {
-            System.out.println("취소했습니다.");
+            ConsoleUi.Cancelled();
             return true;
         }
         return false;
@@ -117,19 +130,21 @@ public class MyInfoMenu {
      */
     private void PrintInvalidChoiceMessage(String choice) {
         if (choice.matches("\\d+")) {
-            System.out.println("올바른 메뉴 번호를 입력해 주세요.");
+            ConsoleUi.InvalidMenu();
         } else {
-            System.out.println("숫자를 입력해 주세요.");
+            ConsoleUi.Error("숫자를 입력해 주세요.");
         }
+        ConsoleUi.PressEnter(scanner);
     }
 
     /**
      * 결과를 확인할 시간을 주기 위해, "0"을 입력할 때까지 화면에 머무릅니다.
      */
     private void WaitForBack() {
-        System.out.print("\n0을 입력하면 뒤로가기: ");
+        System.out.println();
+        ConsoleUi.Prompt("0을 입력하면 뒤로가기");
         while (!CANCEL_INPUT.equals(scanner.nextLine().trim())) {
-            System.out.print("0을 입력하면 뒤로가기: ");
+            ConsoleUi.Prompt("0을 입력하면 뒤로가기");
         }
     }
 
@@ -138,21 +153,22 @@ public class MyInfoMenu {
      */
     private void UpdateName(Customer customer) {
         while (true) {
-            System.out.print("새 이름 (현재: " + customer.getCustomerName() + ", 0: 취소): ");
+            ConsoleUi.Info("현재 이름: " + customer.getCustomerName());
+            ConsoleUi.Prompt("새 이름 (0: 취소)", PROMPT_WIDTH);
             String newName = scanner.nextLine().trim();
             if (IsCancelled(newName)) {
                 return;
             }
             if (newName.isEmpty()) {
-                System.out.println("이름을 입력해주세요.");
+                ConsoleUi.Error("이름을 입력해주세요.");
                 continue;
             }
             if (newName.length() > NAME_MAX_LENGTH) {
-                System.out.println("이름이 너무 깁니다. (" + NAME_MAX_LENGTH + "자 이하)");
+                ConsoleUi.Error("이름이 너무 깁니다. (" + NAME_MAX_LENGTH + "자 이하)");
                 continue;
             }
             if (newName.equals(customer.getCustomerName())) {
-                System.out.println("동일한 이름은 사용할 수 없습니다. 다시 입력해주세요.");
+                ConsoleUi.Error("동일한 이름은 사용할 수 없습니다. 다시 입력해주세요.");
                 continue;
             }
             customer.setCustomerName(newName);
@@ -161,11 +177,15 @@ public class MyInfoMenu {
 
         try {
             boolean updated = customerService.Update(customer);
-            System.out.println(updated ? "이름이 \"" + customer.getCustomerName() + "\"(으)로 변경되었습니다." : "이름 변경에 실패했습니다.");
+            if (updated) {
+                ConsoleUi.Success("이름이 \"" + customer.getCustomerName() + "\"(으)로 변경되었습니다.");
+            } else {
+                ConsoleUi.Error("이름 변경에 실패했습니다.");
+            }
         } catch (IllegalStateException e) {
-            System.out.println(DB_ERROR_MESSAGE);
+            ConsoleUi.Error(DB_ERROR_MESSAGE);
         } catch (Exception e) {
-            System.out.println(COMMUNICATION_ERROR_MESSAGE);
+            ConsoleUi.Error(COMMUNICATION_ERROR_MESSAGE);
         }
         WaitForBack();
     }
@@ -175,32 +195,33 @@ public class MyInfoMenu {
      */
     private void UpdatePhone(Customer customer) {
         while (true) {
-            System.out.print("새 전화번호 (현재: " + customer.getPhone() + ", 0: 취소): ");
+            ConsoleUi.Info("현재 연락처: " + customer.getPhone());
+            ConsoleUi.Prompt("새 연락처 (0: 취소)", PROMPT_WIDTH);
             String newPhone = scanner.nextLine().trim();
             if (IsCancelled(newPhone)) {
                 return;
             }
             if (!newPhone.matches(PHONE_PATTERN)) {
-                System.out.println("전화번호 형식이 올바르지 않습니다. 다시 입력해주세요.");
+                ConsoleUi.Error("전화번호 형식이 올바르지 않습니다. 다시 입력해주세요.");
                 continue;
             }
 
             String normalizedPhone = newPhone.replace("-", "");
             String currentNormalizedPhone = customer.getPhone().replace("-", "");
             if (normalizedPhone.equals(currentNormalizedPhone)) {
-                System.out.println("동일한 번호는 사용할 수 없습니다. 다시 입력해주세요.");
+                ConsoleUi.Error("동일한 번호는 사용할 수 없습니다. 다시 입력해주세요.");
                 continue;
             }
             try {
                 if (customerService.IsPhoneTaken(normalizedPhone, customer.getCustomerId())) {
-                    System.out.println("이미 사용 중인 전화번호입니다. 다시 입력해주세요.");
+                    ConsoleUi.Error("이미 사용 중인 전화번호입니다. 다시 입력해주세요.");
                     continue;
                 }
             } catch (IllegalStateException e) {
-                System.out.println(DB_ERROR_MESSAGE);
+                ConsoleUi.Error(DB_ERROR_MESSAGE);
                 return;
             } catch (Exception e) {
-                System.out.println(COMMUNICATION_ERROR_MESSAGE);
+                ConsoleUi.Error(COMMUNICATION_ERROR_MESSAGE);
                 return;
             }
             customer.setPhone(normalizedPhone);
@@ -209,11 +230,15 @@ public class MyInfoMenu {
 
         try {
             boolean updated = customerService.Update(customer);
-            System.out.println(updated ? "전화번호가 \"" + customer.getPhone() + "\"(으)로 변경되었습니다." : "전화번호 변경에 실패했습니다.");
+            if (updated) {
+                ConsoleUi.Success("연락처가 \"" + customer.getPhone() + "\"(으)로 변경되었습니다.");
+            } else {
+                ConsoleUi.Error("연락처 변경에 실패했습니다.");
+            }
         } catch (IllegalStateException e) {
-            System.out.println(DB_ERROR_MESSAGE);
+            ConsoleUi.Error(DB_ERROR_MESSAGE);
         } catch (Exception e) {
-            System.out.println(COMMUNICATION_ERROR_MESSAGE);
+            ConsoleUi.Error(COMMUNICATION_ERROR_MESSAGE);
         }
         WaitForBack();
     }
@@ -224,21 +249,22 @@ public class MyInfoMenu {
      */
     private void UpdateEmail(Customer customer) {
         while (true) {
-            System.out.print("새 이메일/ID (현재: " + customer.getEmail() + ", 0: 취소): ");
+            ConsoleUi.Info("현재 이메일: " + customer.getEmail());
+            ConsoleUi.Prompt("새 이메일 (0: 취소)", PROMPT_WIDTH);
             String newEmail = scanner.nextLine().trim().toLowerCase();
             if (IsCancelled(newEmail)) {
                 return;
             }
             if (!newEmail.matches(EMAIL_PATTERN)) {
-                System.out.println("이메일 형식이 올바르지 않습니다. 다시 입력해주세요.");
+                ConsoleUi.Error("이메일 형식이 올바르지 않습니다. 다시 입력해주세요.");
                 continue;
             }
             if (newEmail.length() > EMAIL_MAX_LENGTH) {
-                System.out.println("이메일이 너무 깁니다. (" + EMAIL_MAX_LENGTH + "자 이하) 다시 입력해주세요.");
+                ConsoleUi.Error("이메일이 너무 깁니다. (" + EMAIL_MAX_LENGTH + "자 이하) 다시 입력해주세요.");
                 continue;
             }
             if (newEmail.equals(customer.getEmail().toLowerCase())) {
-                System.out.println("동일한 이메일은 사용할 수 없습니다. 다시 입력해주세요.");
+                ConsoleUi.Error("동일한 이메일은 사용할 수 없습니다. 다시 입력해주세요.");
                 continue;
             }
 
@@ -247,18 +273,19 @@ public class MyInfoMenu {
                 if (updated) {
                     customer.setEmail(newEmail);
                     this.email = newEmail;
-                    System.out.println("이메일(ID)이 \"" + newEmail + "\"(으)로 수정되었습니다. 다음 로그인부터는 새 이메일로 로그인해주세요.");
+                    ConsoleUi.Success("이메일(ID)이 \"" + newEmail + "\"(으)로 수정되었습니다.");
+                    ConsoleUi.Warn("다음 로그인부터는 새 이메일로 로그인해 주세요.");
                 } else {
-                    System.out.println("이메일 수정에 실패했습니다.");
+                    ConsoleUi.Error("이메일 수정에 실패했습니다.");
                 }
             } catch (IllegalStateException e) {
-                System.out.println(DB_ERROR_MESSAGE);
+                ConsoleUi.Error(DB_ERROR_MESSAGE);
             } catch (Exception e) {
                 if (IsSqlState(e, "23505")) {
-                    System.out.println("이미 사용 중인 이메일이라 변경할 수 없습니다. 다시 입력해주세요.");
+                    ConsoleUi.Error("이미 사용 중인 이메일이라 변경할 수 없습니다. 다시 입력해주세요.");
                     continue;
                 }
-                System.out.println(COMMUNICATION_ERROR_MESSAGE);
+                ConsoleUi.Error(COMMUNICATION_ERROR_MESSAGE);
             }
             break;
         }
@@ -271,7 +298,7 @@ public class MyInfoMenu {
     private void UpdatePassword(Customer customer) {
         String currentPassword;
         while (true) {
-            System.out.print("현재 비밀번호 (0: 취소): ");
+            ConsoleUi.Prompt("현재 비밀번호 (0: 취소)", PROMPT_WIDTH);
             currentPassword = scanner.nextLine();
             if (IsCancelled(currentPassword.trim())) {
                 return;
@@ -281,14 +308,14 @@ public class MyInfoMenu {
             try {
                 verified = customerService.VerifyPassword(customer, currentPassword);
             } catch (IllegalStateException e) {
-                System.out.println(DB_ERROR_MESSAGE);
+                ConsoleUi.Error(DB_ERROR_MESSAGE);
                 return;
             } catch (Exception e) {
-                System.out.println(COMMUNICATION_ERROR_MESSAGE);
+                ConsoleUi.Error(COMMUNICATION_ERROR_MESSAGE);
                 return;
             }
             if (!verified) {
-                System.out.println("현재 비밀번호가 일치하지 않습니다. 다시 입력해주세요.");
+                ConsoleUi.Error("현재 비밀번호가 일치하지 않습니다. 다시 입력해주세요.");
                 continue;
             }
             break;
@@ -296,7 +323,8 @@ public class MyInfoMenu {
 
         String newPassword;
         while (true) {
-            System.out.print("새 비밀번호 (8~20자, 대문자/소문자/숫자/특수문자 각 1개 이상, 공백 불가, 0: 취소): ");
+            ConsoleUi.Warn("비밀번호는 8~20자이며 대문자/소문자/숫자/특수문자를 각각 1개 이상 포함해야 합니다.");
+            ConsoleUi.Prompt("새 비밀번호 (0: 취소)", PROMPT_WIDTH);
             newPassword = scanner.nextLine();
             if (IsCancelled(newPassword.trim())) {
                 return;
@@ -304,12 +332,12 @@ public class MyInfoMenu {
             List<String> problems = ValidatePassword(newPassword);
             if (!problems.isEmpty()) {
                 for (String problem : problems) {
-                    System.out.println(problem);
+                    ConsoleUi.Error(problem);
                 }
                 continue;
             }
             if (newPassword.equals(currentPassword)) {
-                System.out.println("동일한 비밀번호는 사용할 수 없습니다. 다시 입력해주세요.");
+                ConsoleUi.Error("동일한 비밀번호는 사용할 수 없습니다. 다시 입력해주세요.");
                 continue;
             }
             break;
@@ -317,7 +345,7 @@ public class MyInfoMenu {
 
         String newPasswordConfirm;
         while (true) {
-            System.out.print("새 비밀번호 확인: ");
+            ConsoleUi.Prompt("새 비밀번호 확인", PROMPT_WIDTH);
             newPasswordConfirm = scanner.nextLine();
             if (IsCancelled(newPasswordConfirm.trim())) {
                 return;
@@ -325,16 +353,20 @@ public class MyInfoMenu {
             if (newPassword.equals(newPasswordConfirm)) {
                 break;
             }
-            System.out.println("비밀번호가 일치하지 않습니다. 다시 입력해주세요.");
+            ConsoleUi.Error("비밀번호가 일치하지 않습니다. 다시 입력해주세요.");
         }
 
         try {
             boolean updated = customerService.UpdatePassword(customer, newPassword);
-            System.out.println(updated ? "비밀번호가 변경되었습니다." : "비밀번호 변경에 실패했습니다.");
+            if (updated) {
+                ConsoleUi.Success("비밀번호가 변경되었습니다.");
+            } else {
+                ConsoleUi.Error("비밀번호 변경에 실패했습니다.");
+            }
         } catch (IllegalStateException e) {
-            System.out.println(DB_ERROR_MESSAGE);
+            ConsoleUi.Error(DB_ERROR_MESSAGE);
         } catch (Exception e) {
-            System.out.println(COMMUNICATION_ERROR_MESSAGE);
+            ConsoleUi.Error(COMMUNICATION_ERROR_MESSAGE);
         }
         WaitForBack();
     }
@@ -349,27 +381,29 @@ public class MyInfoMenu {
         try {
             orders = customerService.FindOrderHistory(customer.getCustomerId());
         } catch (IllegalStateException e) {
-            System.out.println(DB_ERROR_MESSAGE);
+            ConsoleUi.Error(DB_ERROR_MESSAGE);
             return false;
         } catch (Exception e) {
-            System.out.println(COMMUNICATION_ERROR_MESSAGE);
+            ConsoleUi.Error(COMMUNICATION_ERROR_MESSAGE);
             return false;
         }
 
         if (!orders.isEmpty()) {
-            System.out.println("\n주문 이력이 " + orders.size() + "건 있어서 탈퇴할 수 없습니다.");
+            System.out.println();
+            ConsoleUi.Error("주문 이력이 " + orders.size() + "건 있어서 탈퇴할 수 없습니다.");
             return false;
         }
 
         String password;
         while (true) {
-            System.out.print("\n본인 확인을 위해 현재 비밀번호를 입력하세요 (0: 취소): ");
+            System.out.println();
+            ConsoleUi.Prompt("본인 확인 - 현재 비밀번호 (0: 취소)");
             password = scanner.nextLine();
             if (IsCancelled(password.trim())) {
                 return false;
             }
             if (password.isEmpty()) {
-                System.out.println("비밀번호를 입력해주세요.");
+                ConsoleUi.Error("비밀번호를 입력해주세요.");
                 continue;
             }
             break;
@@ -379,43 +413,51 @@ public class MyInfoMenu {
         try {
             verified = customerService.VerifyPassword(customer, password);
         } catch (IllegalStateException e) {
-            System.out.println(DB_ERROR_MESSAGE);
+            ConsoleUi.Error(DB_ERROR_MESSAGE);
             return false;
         } catch (Exception e) {
-            System.out.println(COMMUNICATION_ERROR_MESSAGE);
+            ConsoleUi.Error(COMMUNICATION_ERROR_MESSAGE);
             return false;
         }
         if (!verified) {
-            System.out.println("비밀번호가 일치하지 않습니다.");
+            ConsoleUi.Error("비밀번호가 일치하지 않습니다.");
             return false;
         }
 
-        System.out.print("\n정말 탈퇴하시겠습니까? 이 작업은 되돌릴 수 없습니다. (y: 탈퇴, 0 또는 그 외: 취소): ");
+        System.out.println();
+        ConsoleUi.Warn("탈퇴하면 되돌릴 수 없습니다.");
+        ConsoleUi.YesNoOptions("탈퇴", "취소");
+        System.out.println();
+        ConsoleUi.Prompt("정말 탈퇴하시겠습니까? (Y/N)");
         String confirm = scanner.nextLine().trim();
         if (!"y".equalsIgnoreCase(confirm)) {
-            System.out.println("취소했습니다.");
+            ConsoleUi.Cancelled();
             return false;
         }
 
         try {
             boolean deleted = customerService.DeleteById(customer);
             if (!deleted) {
-                System.out.println("탈퇴에 실패했습니다.");
+                ConsoleUi.Error("탈퇴에 실패했습니다.");
                 return false;
             }
         } catch (IllegalStateException e) {
-            System.out.println(DB_ERROR_MESSAGE);
+            ConsoleUi.Error(DB_ERROR_MESSAGE);
             return false;
         } catch (Exception e) {
-            System.out.println(COMMUNICATION_ERROR_MESSAGE);
+            ConsoleUi.Error(COMMUNICATION_ERROR_MESSAGE);
             return false;
         }
 
-        System.out.println("\n=== 회원 탈퇴 완료 ===");
-        System.out.println("회원 탈퇴가 완료되었습니다.");
-        System.out.print("\n0을 입력하면 비회원 메뉴로 이동: ");
+        ConsoleUi.ClearScreen();
+        ConsoleUi.CompleteBox("WITHDRAW", "회원 탈퇴 완료");
+
+        System.out.println();
+        ConsoleUi.Success("회원 탈퇴가 완료되었습니다.");
+        System.out.println();
+        ConsoleUi.Prompt("0을 입력하면 비회원 메뉴로 이동");
         while (!CANCEL_INPUT.equals(scanner.nextLine().trim())) {
-            System.out.print("0을 입력하면 비회원 메뉴로 이동: ");
+            ConsoleUi.Prompt("0을 입력하면 비회원 메뉴로 이동");
         }
         return true;
     }

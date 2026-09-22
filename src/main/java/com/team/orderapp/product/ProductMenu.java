@@ -1,5 +1,7 @@
 package com.team.orderapp.product;
 
+import com.team.orderapp.common.ConsoleUi;
+
 import java.util.List;
 import java.util.Optional;
 import java.util.Scanner;
@@ -29,6 +31,9 @@ public class ProductMenu {
     // 선택된 상품의 상세 화면을 담당
     private final ProductDetailMenu productDetailMenu;
 
+    // 안내 문구를 읽을 시간을 주기 위해 Enter 입력을 받을 때 사용
+    private final Scanner scanner;
+
 
     /**
      * Main에서 생성한 Scanner를 전달받습니다.
@@ -37,6 +42,8 @@ public class ProductMenu {
      * 입력 버퍼 문제를 줄일 수 있습니다.
      */
     public ProductMenu(Scanner scanner) {
+
+        this.scanner = scanner;
 
         // 상품 기능을 호출하기 위한 Service
         this.productService =
@@ -76,14 +83,13 @@ public class ProductMenu {
             // 목록 출력 → 상품 선택 → 상세 화면 연결
             ShowListAndDetail(
                     products,
-                    "상품 전체 조회"
+                    "전체 상품",
+                    "PRODUCT / ALL"
             );
 
         } catch (Exception e) {
-            System.out.println(
-                    "상품 전체 조회 중 오류가 발생했습니다."
-            );
-            System.out.println(e.getMessage());
+            ConsoleUi.Error("상품 전체 조회 중 오류가 발생했습니다.");
+            ConsoleUi.PressEnter(scanner);
         }
     }
 
@@ -125,7 +131,8 @@ public class ProductMenu {
                 // 검색 결과 목록과 상세 화면 연결
                 ShowListAndDetail(
                         products,
-                        "상품 검색 결과"
+                        "검색 결과",
+                        "PRODUCT / SEARCH"
                 );
 
                 /*
@@ -140,15 +147,14 @@ public class ProductMenu {
                      IllegalStateException e) {
 
                 // 잘못된 카테고리나 가격 범위 처리
-                System.out.println(e.getMessage());
+                ConsoleUi.Error(e.getMessage());
+                ConsoleUi.PressEnter(scanner);
 
             } catch (Exception e) {
 
                 // 예상하지 못한 DB 또는 프로그램 오류
-                System.out.println(
-                        "상품 조건 조회 중 오류가 발생했습니다."
-                );
-                System.out.println(e.getMessage());
+                ConsoleUi.Error("상품 조건 조회 중 오류가 발생했습니다.");
+                ConsoleUi.PressEnter(scanner);
             }
         }
     }
@@ -164,14 +170,14 @@ public class ProductMenu {
      */
     private void ShowListAndDetail(
             List<Product> products,
-            String title
+            String title,
+            String screenCode
     ) {
 
         // 조회 결과가 없는 경우
         if (products == null || products.isEmpty()) {
-            System.out.println(
-                    "조회된 상품이 없습니다."
-            );
+            ConsoleUi.Warn("조회된 상품이 없습니다.");
+            ConsoleUi.PressEnter(scanner);
             return;
         }
 
@@ -184,7 +190,8 @@ public class ProductMenu {
             Long selectedProductId =
                     productListMenu.SelectProduct(
                             products,
-                            title
+                            title,
+                            screenCode
                     );
 
             /*
@@ -221,9 +228,8 @@ public class ProductMenu {
 
         // 상품이 삭제됐거나 존재하지 않는 경우
         if (result.isEmpty()) {
-            System.out.println(
-                    "선택한 상품을 찾을 수 없습니다."
-            );
+            ConsoleUi.Error("존재하지 않는 상품입니다.");
+            ConsoleUi.PressEnter(scanner);
             return;
         }
 

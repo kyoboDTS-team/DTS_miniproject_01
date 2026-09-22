@@ -1,19 +1,27 @@
 package com.team.orderapp.product;
 
+import com.team.orderapp.cart.CartMenu;
 import com.team.orderapp.cart.CartService;
+import com.team.orderapp.common.ConsoleUi;
 
-import java.text.NumberFormat;
-import java.util.Locale;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Scanner;
 
 public class ProductDetailMenu {
 
     private final Scanner scanner;
     private final CartService cartService;
+    private final CategoryService categoryService;
+
+    // 카테고리 이름은 화면 표시용이라 한 번만 읽어 재사용한다
+    private Map<Long, String> categoryNames;
 
     public ProductDetailMenu(Scanner scanner) {
         this.scanner = scanner;
         this.cartService = new CartService();
+        this.categoryService = new CategoryService();
     }
 
 
@@ -23,7 +31,7 @@ public class ProductDetailMenu {
     public void Run(Product product) {
 
         if (product == null) {
-            System.out.println("상품 정보가 없습니다.");
+            ConsoleUi.Error("존재하지 않는 상품입니다.");
             return;
         }
 
@@ -31,43 +39,34 @@ public class ProductDetailMenu {
 
             PrintProductDetail(product);
 
-            // 판매 중지 또는 품절이면 장바구니 담기 불가능
-            if (!CanAddToCart(product)) {
-                System.out.println("0. 이전");
-                System.out.println("----------------------------------------");
-                System.out.print("선택 > ");
+            boolean canAddToCart = CanAddToCart(product);
 
-                String input = scanner.nextLine().trim();
+            if (canAddToCart) {
+                ConsoleUi.Option("1", "장바구니 담기");
+            }
 
-                if (input.equals("0")) {
+            ConsoleUi.Option("0", "이전");
+            System.out.println();
+            ConsoleUi.Prompt("선택");
+
+            String input = ConsoleUi.Choice(scanner.nextLine());
+
+            if (input.equals("0")) {
+                return;
+            }
+
+            if (input.equals("1") && canAddToCart) {
+
+                // 담기에 성공한 뒤 [0]을 고르면 상품 목록으로 돌아간다
+                if (!AddToCart(product)) {
                     return;
                 }
 
-                System.out.println("0번을 입력해주세요.");
                 continue;
             }
 
-            System.out.println("1. 장바구니 담기");
-            System.out.println("0. 이전");
-            System.out.println("----------------------------------------");
-            System.out.print("선택 > ");
-
-            String input = scanner.nextLine().trim();
-
-            switch (input) {
-
-                case "1":
-                    AddToCart(product);
-                    break;
-
-                case "0":
-                    return;
-
-                default:
-                    System.out.println(
-                            "올바른 메뉴 번호를 입력해주세요."
-                    );
-            }
+            ConsoleUi.InvalidMenu();
+            ConsoleUi.PressEnter(scanner);
         }
     }
 
@@ -77,57 +76,27 @@ public class ProductDetailMenu {
      */
     private void PrintProductDetail(Product product) {
 
-        NumberFormat numberFormat =
-                NumberFormat.getNumberInstance(Locale.KOREA);
-
-        String price =
-                numberFormat.format(product.getPrice());
-
-        String saleStatus =
-                ConvertSaleStatus(product);
+        ConsoleUi.ClearScreen();
+        ConsoleUi.ScreenHeader("PRODUCT / DETAIL", product.getProductCode());
 
         System.out.println();
-        System.out.println("========================================");
-        System.out.println("              상품 상세");
-        System.out.println("========================================");
-        System.out.println(
-                "상품번호      : " + product.getProductId()
-        );
-        System.out.println(
-                "상품코드      : " + product.getProductCode()
-        );
-        System.out.println(
-                "상품명        : " + product.getProductName()
-        );
-        System.out.println(
-                "카테고리 번호 : " + product.getCategoryId()
-        );
-        System.out.println(
-                "가격          : " + price + "원"
-        );
-        System.out.println(
-                "현재 재고     : "
-                        + product.getStockQuantity() + "개"
-        );
-        System.out.println(
-                "판매 상태     : " + saleStatus
-        );
-        System.out.println(
-                "시리얼 관리   : "
-                        + ConvertSerialStatus(product)
-        );
-        System.out.println("----------------------------------------");
+        ConsoleUi.Field("상품명", product.getProductName());
+        ConsoleUi.Field("카테고리", FindCategoryName(product.getCategoryId()));
+        ConsoleUi.Field("가격", ConsoleUi.Money(product.getPrice()) + "원");
+        ConsoleUi.Field("현재 재고",
+                ConsoleUi.Stock(product.getStockQuantity(), product.getReorderLevel()));
+        ConsoleUi.Field("판매 상태", FormatSaleStatus(product));
+        ConsoleUi.Field("시리얼 관리", ConvertSerialStatus(product));
+
+        System.out.println();
+        ConsoleUi.Divider();
 
         if (!"SELLING".equals(product.getSaleStatus())) {
-            System.out.println(
-                    "현재 판매하지 않는 상품입니다."
-            );
+            ConsoleUi.Error("현재 판매하지 않는 상품입니다.");
         } else if (product.getStockQuantity() == null ||
                 product.getStockQuantity() <= 0) {
 
-            System.out.println(
-                    "현재 품절된 상품입니다."
-            );
+            ConsoleUi.Error("현재 품절된 상품입니다.");
         }
     }
 
@@ -148,89 +117,133 @@ public class ProductDetailMenu {
 
     /**
      * 장바구니 담기
+     *
+     * @return 이 화면에 머무르면 true, 상품 목록으로 돌아가면 false
      */
-    private void AddToCart(Product product) {
+    private boolean AddToCart(Product product) {
 
-        int quantity =
-                ReadQuantity(product.getStockQuantity());
+        Integer quantity = ReadQuantity(product.getStockQuantity());
 
-        /*
-         * CartService가 완성되면 이 위치에서 호출
-         *
-         * 예:
-         * cartService.AddProduct(product, quantity);
-         */
+        // 수량 입력에서 0을 누르면 담기를 취소한다
+        if (quantity == null) {
+            ConsoleUi.Cancelled();
+            return true;
+        }
 
-        cartService.AddProduct(product, quantity);
+        try {
+            cartService.AddProduct(product, quantity);
+
+        } catch (IllegalArgumentException e) {
+            ConsoleUi.Error(e.getMessage());
+            ConsoleUi.PressEnter(scanner);
+            return true;
+
+        } catch (RuntimeException e) {
+            ConsoleUi.Error("장바구니 처리 중 문제가 발생했습니다. 잠시 후 다시 시도해 주세요.");
+            ConsoleUi.PressEnter(scanner);
+            return true;
+        }
+
         System.out.println();
-        System.out.println(
-                product.getProductName()
-                        + " " + quantity
-                        + "개를 장바구니에 담도록 요청했습니다."
-        );
+        ConsoleUi.Success("장바구니에 추가되었습니다.");
+        ConsoleUi.Info("현재 장바구니 " + ConsoleUi.Yellow("(" + cartService.GetCartCount() + ")"));
+
+        return AskNextStep();
     }
 
 
     /**
-     * 장바구니 수량 입력
+     * 담기 직후 다음 행동을 고르는 헬퍼 메서드입니다.
+     *
+     * @return 상품 상세에 머무르면 true, 상품 목록으로 돌아가면 false
      */
-    private int ReadQuantity(int stockQuantity) {
+    private boolean AskNextStep() {
 
         while (true) {
 
-            System.out.print("수량 > ");
-            String input = scanner.nextLine().trim();
+            System.out.println();
+            ConsoleUi.Option("1", "계속 보기");
+            ConsoleUi.Option("2", "장바구니 보기");
+            ConsoleUi.Option("0", "상품 목록으로");
+            System.out.println();
+            ConsoleUi.Prompt("선택");
 
-            try {
-                int quantity =
-                        Integer.parseInt(input);
+            String input = ConsoleUi.Choice(scanner.nextLine());
 
-                if (quantity <= 0) {
-                    System.out.println(
-                            "수량은 1개 이상이어야 합니다."
-                    );
-                    continue;
-                }
+            switch (input) {
 
-                if (quantity > stockQuantity) {
-                    System.out.println(
-                            "현재 재고보다 많은 수량은 "
-                                    + "담을 수 없습니다."
-                    );
-                    System.out.println(
-                            "현재 재고: "
-                                    + stockQuantity + "개"
-                    );
-                    continue;
-                }
+                case "1":
+                    return true;
 
-                return quantity;
+                case "2":
+                    new CartMenu(scanner).Run();
+                    return true;
 
-            } catch (NumberFormatException e) {
-                System.out.println(
-                        "수량은 숫자로 입력해주세요."
-                );
+                case "0":
+                    return false;
+
+                default:
+                    ConsoleUi.InvalidMenu();
             }
         }
     }
 
 
     /**
-     * 판매 상태를 화면용 한글로 변환
+     * 장바구니 수량 입력
+     *
+     * @return 입력한 수량. 0을 입력하면 null
      */
-    private String ConvertSaleStatus(Product product) {
+    private Integer ReadQuantity(int stockQuantity) {
 
-        if (!"SELLING".equals(product.getSaleStatus())) {
-            return "판매중지";
+        while (true) {
+
+            ConsoleUi.Prompt("수량 (0: 취소)");
+            String input = scanner.nextLine().trim();
+
+            try {
+                int quantity = Integer.parseInt(input);
+
+                if (quantity == 0) {
+                    return null;
+                }
+
+                if (quantity < 0) {
+                    ConsoleUi.Error("수량은 1개 이상이어야 합니다.");
+                    continue;
+                }
+
+                if (quantity > stockQuantity) {
+                    ConsoleUi.Error("현재 재고보다 많은 수량은 담을 수 없습니다.");
+                    ConsoleUi.Warn("현재 재고: " + stockQuantity + "개");
+                    continue;
+                }
+
+                return quantity;
+
+            } catch (NumberFormatException e) {
+                ConsoleUi.Error("올바른 값을 입력해 주세요.");
+            }
+        }
+    }
+
+
+    /**
+     * 판매 상태를 색상 규칙에 맞게 표시합니다.
+     *
+     * DB 상태값(SELLING / STOPPED)을 화면에서도 그대로 쓰고, 재고가 0이면 SOLD OUT을 덧붙입니다.
+     */
+    private String FormatSaleStatus(Product product) {
+
+        String status = ConsoleUi.Status(product.getSaleStatus());
+
+        if ("SELLING".equals(product.getSaleStatus())
+                && (product.getStockQuantity() == null || product.getStockQuantity() <= 0)) {
+
+            return status + "  " + ConsoleUi.Red("SOLD OUT");
         }
 
-        if (product.getStockQuantity() == null ||
-                product.getStockQuantity() <= 0) {
-
-            return "품절";
-        }
-
-        return "판매중";
+        return status;
     }
 
 
@@ -242,9 +255,52 @@ public class ProductDetailMenu {
         if (Boolean.TRUE.equals(
                 product.getRequiresSerial()
         )) {
-            return "필요";
+            return "YES";
         }
 
-        return "해당 없음";
+        return "NO";
+    }
+
+
+    /**
+     * 카테고리 번호에 해당하는 이름을 찾는 헬퍼 메서드입니다.
+     *
+     * 조회에 실패하면 화면이 멈추지 않도록 번호를 그대로 보여 줍니다.
+     */
+    private String FindCategoryName(Long categoryId) {
+
+        if (categoryId == null) {
+            return "-";
+        }
+
+        if (categoryNames == null) {
+            categoryNames = LoadCategoryNames();
+        }
+
+        return categoryNames.getOrDefault(categoryId, String.valueOf(categoryId));
+    }
+
+
+    /**
+     * 카테고리 번호와 이름을 한 번만 읽어 두는 헬퍼 메서드입니다.
+     */
+    private Map<Long, String> LoadCategoryNames() {
+
+        Map<Long, String> names = new HashMap<>();
+
+        try {
+            List<Category> categories = categoryService.FindAll();
+
+            if (categories != null) {
+                for (Category category : categories) {
+                    names.put(category.getCategoryId(), category.getCategoryName());
+                }
+            }
+
+        } catch (RuntimeException e) {
+            // 이름을 못 읽어도 상세 화면은 보여 준다
+        }
+
+        return names;
     }
 }

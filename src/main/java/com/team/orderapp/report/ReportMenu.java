@@ -1,7 +1,8 @@
 package com.team.orderapp.report;
 
+import com.team.orderapp.common.ConsoleUi;
+
 import java.math.BigDecimal;
-import java.text.NumberFormat;
 import java.util.List;
 import java.util.Scanner;
 
@@ -31,7 +32,7 @@ public class ReportMenu {
         while (true) {
 
             PrintMenu();
-            String input = scanner.nextLine().trim();
+            String input = ConsoleUi.Choice(scanner.nextLine());
 
             switch (input) {
 
@@ -55,7 +56,7 @@ public class ReportMenu {
                     return;
 
                 default:
-                    System.out.println("올바른 메뉴 번호를 입력해 주세요.");
+                    ConsoleUi.InvalidMenu();
             }
         }
     }
@@ -67,48 +68,26 @@ public class ReportMenu {
 
     private void ShowTotalSales() {
 
-        System.out.println();
-        System.out.println(
-                "========================================"
-        );
-
-        System.out.println(
-                "             전체 매출 합계"
-        );
-
-        System.out.println(
-                "========================================"
-        );
-
+        ConsoleUi.ClearScreen();
+        ConsoleUi.ScreenHeader("REPORT / SALES", "전체 매출 합계");
 
         try {
 
             BigDecimal totalSales =
                     reportService.GetTotalSales();
 
-
-            System.out.println(
-                    "총 매출: "
-                            + FormatMoney(totalSales)
-                            + "원"
-            );
-
+            System.out.println();
+            ConsoleUi.Field("총 매출", ConsoleUi.Amount(totalSales), 12);
 
             System.out.println();
-
-            System.out.println(
-                    "※ 반품 완료(RETURNED) 주문은 "
-                            + "매출에서 제외됩니다."
-            );
-
+            ConsoleUi.Warn("반품 완료(RETURNED) 주문은 매출에서 제외됩니다.");
 
         } catch (Exception e) {
 
-            System.out.println(
-                    "통계 조회 실패: "
-                            + e.getMessage()
-            );
+            ConsoleUi.Error("통계 조회 중 문제가 발생했습니다.");
         }
+
+        ConsoleUi.PressEnter(scanner);
     }
 
 
@@ -118,19 +97,8 @@ public class ReportMenu {
 
     private void ShowDailySalesStats() {
 
-        System.out.println();
-        System.out.println(
-                "============================================================"
-        );
-
-        System.out.println(
-                "                   일별 주문 / 매출 통계"
-        );
-
-        System.out.println(
-                "============================================================"
-        );
-
+        ConsoleUi.ClearScreen();
+        ConsoleUi.ScreenHeader("REPORT / DAILY", "일별 주문 / 매출 통계");
 
         try {
 
@@ -142,52 +110,43 @@ public class ReportMenu {
             if (stats == null ||
                     stats.isEmpty()) {
 
-                System.out.println(
-                        "집계할 주문 데이터가 없습니다."
-                );
+                System.out.println();
+                ConsoleUi.Warn("집계할 주문 데이터가 없습니다.");
+                ConsoleUi.PressEnter(scanner);
 
                 return;
             }
 
-
-            System.out.printf(
-                    "%-12s %-10s %-10s %-15s%n",
-                    "날짜",
-                    "주문건수",
-                    "판매수량",
-                    "매출"
-            );
-
-
+            System.out.println();
             System.out.println(
-                    "------------------------------------------------------------"
+                    ConsoleUi.Cyan(
+                            ConsoleUi.PadRight("날짜", 14)
+                                    + ConsoleUi.PadLeft("주문건수", 10)
+                                    + ConsoleUi.PadLeft("판매수량", 10)
+                                    + ConsoleUi.PadLeft("매출", 16)
+                    )
             );
-
+            ConsoleUi.Divider(50);
 
             for (DailySalesStat stat : stats) {
 
-                System.out.printf(
-                        "%-12s %-10d %-10d %,d원%n",
-
-                        stat.getOrderDate(),
-
-                        stat.getOrderCount(),
-
-                        stat.getTotalQuantity(),
-
-                        stat.getTotalSales()
-                                .longValue()
+                System.out.println(
+                        ConsoleUi.PadRight(String.valueOf(stat.getOrderDate()), 14)
+                                + ConsoleUi.PadLeft(String.valueOf(stat.getOrderCount()), 10)
+                                + ConsoleUi.PadLeft(String.valueOf(stat.getTotalQuantity()), 10)
+                                + ConsoleUi.PadLeft(
+                                        ConsoleUi.Money(stat.getTotalSales()) + "원", 16)
                 );
             }
 
+            ConsoleUi.Divider(50);
 
         } catch (Exception e) {
 
-            System.out.println(
-                    "일별 통계 조회 실패: "
-                            + e.getMessage()
-            );
+            ConsoleUi.Error("일별 통계 조회 중 문제가 발생했습니다.");
         }
+
+        ConsoleUi.PressEnter(scanner);
     }
 
 
@@ -197,19 +156,8 @@ public class ReportMenu {
 
     private void ShowProductSalesStats() {
 
-        System.out.println();
-        System.out.println(
-                "======================================================================"
-        );
-
-        System.out.println(
-                "                       상품별 판매 통계"
-        );
-
-        System.out.println(
-                "======================================================================"
-        );
-
+        ConsoleUi.ClearScreen();
+        ConsoleUi.ScreenHeader("REPORT / PRODUCT", "상품별 판매 통계");
 
         try {
 
@@ -221,125 +169,103 @@ public class ReportMenu {
             if (stats == null ||
                     stats.isEmpty()) {
 
-                System.out.println(
-                        "집계할 판매 데이터가 없습니다."
-                );
+                System.out.println();
+                ConsoleUi.Warn("집계할 판매 데이터가 없습니다.");
+                ConsoleUi.PressEnter(scanner);
 
                 return;
             }
 
-
-            System.out.printf(
-                    "%-6s %-12s %-20s %-10s %-15s%n",
-                    "ID",
-                    "상품코드",
-                    "상품명",
-                    "판매수량",
-                    "매출"
-            );
-
-
+            System.out.println();
             System.out.println(
-                    "----------------------------------------------------------------------"
+                    ConsoleUi.Cyan(
+                            ConsoleUi.PadRight("ID", 6)
+                                    + ConsoleUi.PadRight("코드", 10)
+                                    + ConsoleUi.PadRight("상품명", 22)
+                                    + ConsoleUi.PadLeft("판매수량", 10)
+                                    + ConsoleUi.PadLeft("매출", 16)
+                    )
             );
-
+            ConsoleUi.Divider(64);
 
             for (ProductSalesStat stat : stats) {
 
-                System.out.printf(
-                        "%-6d %-12s %-20s %-10d %,d원%n",
-
-                        stat.getProductId(),
-
-                        stat.getProductCode(),
-
-                        stat.getProductName(),
-
-                        stat.getTotalQuantity(),
-
-                        stat.getTotalSales()
-                                .longValue()
+                System.out.println(
+                        ConsoleUi.PadRight(String.valueOf(stat.getProductId()), 6)
+                                + ConsoleUi.PadRight(stat.getProductCode(), 10)
+                                + ConsoleUi.PadRight(
+                                        ConsoleUi.Truncate(stat.getProductName(), 21), 22)
+                                + ConsoleUi.PadLeft(String.valueOf(stat.getTotalQuantity()), 10)
+                                + ConsoleUi.PadLeft(
+                                        ConsoleUi.Money(stat.getTotalSales()) + "원", 16)
                 );
             }
 
+            ConsoleUi.Divider(64);
 
         } catch (Exception e) {
 
-            System.out.println(
-                    "상품별 통계 조회 실패: "
-                            + e.getMessage()
-            );
+            ConsoleUi.Error("상품별 통계 조회 중 문제가 발생했습니다.");
         }
+
+        ConsoleUi.PressEnter(scanner);
     }
+
 
     // ============================================================
     // 관리자 현황 요약 출력
     // ============================================================
+
     private void ShowAdminDashboard() {
+
+        ConsoleUi.ClearScreen();
+        ConsoleUi.ScreenHeader("REPORT / DASHBOARD", "관리자 현황 요약");
 
         try {
             AdminDashboardStat stat = reportService.GetAdminDashboardStat();
 
             System.out.println();
-            System.out.println("========================================");
-            System.out.println("             관리자 현황 요약");
-            System.out.println("========================================");
-
-            System.out.println("전체 상품        : " + stat.getTotalProductCount() + "개");
-            System.out.println("판매중 상품      : " + stat.getSellingProductCount() + "개");
-            System.out.println("판매중지 상품    : " + stat.getStoppedProductCount() + "개");
+            ConsoleUi.Field("전체 상품", stat.getTotalProductCount() + "개", 16);
+            ConsoleUi.Field("판매중 상품",
+                    ConsoleUi.Green(stat.getSellingProductCount() + "개"), 16);
+            ConsoleUi.Field("판매중지 상품",
+                    ConsoleUi.Red(stat.getStoppedProductCount() + "개"), 16);
 
             System.out.println();
-
-            System.out.println("재고 부족 상품   : " + stat.getLowStockProductCount() + "개");
-            System.out.println("품절 상품        : " + stat.getOutOfStockProductCount() + "개");
-            System.out.println("시리얼 상품      : " + stat.getSerialProductCount() + "개");
+            ConsoleUi.Field("재고 부족 상품",
+                    ConsoleUi.Yellow(stat.getLowStockProductCount() + "개"), 16);
+            ConsoleUi.Field("품절 상품",
+                    ConsoleUi.Red(stat.getOutOfStockProductCount() + "개"), 16);
+            ConsoleUi.Field("시리얼 상품", stat.getSerialProductCount() + "개", 16);
 
             System.out.println();
-            System.out.println("전체 매출        : " + FormatMoney(stat.getTotalSales()) + "원");
-
-            System.out.println("========================================");
+            ConsoleUi.Field("전체 매출", ConsoleUi.Amount(stat.getTotalSales()), 16);
 
         } catch (Exception e) {
-            System.out.println("관리자 현황 조회 실패: " + e.getMessage());
+            ConsoleUi.Error("관리자 현황 조회 중 문제가 발생했습니다.");
         }
+
+        ConsoleUi.PressEnter(scanner);
     }
+
 
     // ============================================================
     // 통계 메뉴 출력
     // ============================================================
+
     private void PrintMenu() {
 
+        ConsoleUi.ClearScreen();
+        ConsoleUi.ScreenHeader("ADMIN / REPORT", "통계");
+
+        ConsoleUi.Section("통계");
+        ConsoleUi.MenuItem("01", "관리자 현황 요약");
+        ConsoleUi.MenuItem("02", "전체 매출 합계");
+        ConsoleUi.MenuItem("03", "일별 주문 / 매출 통계");
+        ConsoleUi.MenuItem("04", "상품별 판매 통계");
+        ConsoleUi.MenuItem("00", "이전");
+
         System.out.println();
-        System.out.println("========================================");
-        System.out.println("                 통계");
-        System.out.println("========================================");
-
-        System.out.println("1. 관리자 현황 요약");
-        System.out.println("2. 전체 매출 합계");
-        System.out.println("3. 일별 주문 / 매출 통계");
-        System.out.println("4. 상품별 판매 통계");
-        System.out.println("0. 이전");
-
-        System.out.println("----------------------------------------");
-        System.out.print("선택 > ");
-    }
-
-
-    // ============================================================
-    // 금액 출력 Helper
-    // ============================================================
-
-    private String FormatMoney(
-            BigDecimal amount
-    ) {
-
-        if (amount == null) {
-            return "0";
-        }
-
-        return NumberFormat
-                .getNumberInstance()
-                .format(amount);
+        ConsoleUi.Prompt("선택");
     }
 }

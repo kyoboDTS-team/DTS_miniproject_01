@@ -1,5 +1,7 @@
 package com.team.orderapp.auth;
 
+import com.team.orderapp.common.ConsoleUi;
+
 import java.util.Scanner;
 
 /**
@@ -18,6 +20,9 @@ public class LoginMenu {
      */
 
     private static final String CANCEL_INPUT = "0";
+
+    // 연속 입력 화면에서 필드 이름 칸의 너비 (계획서 7장)
+    private static final int PROMPT_WIDTH = 12;
 
     // common/ConsoleInput이 아직 구현되지 않아 Scanner를 직접 사용. 완성되면 교체 필요.
     private final Scanner scanner;
@@ -41,39 +46,53 @@ public class LoginMenu {
      */
     public UserRole Run() {
 
-        System.out.println("\n=== 로그인 (이메일에 0을 입력하면 취소) ===");
+        ConsoleUi.ClearScreen();
+        ConsoleUi.ScreenHeader("SIGN IN", "로그인");
+
+        System.out.println();
+        ConsoleUi.Info("이메일에 0을 입력하면 취소합니다.");
+        System.out.println();
 
         while (true) {
 
-            System.out.print("이메일: ");
+            ConsoleUi.Prompt("Email", PROMPT_WIDTH);
             String email = scanner.nextLine().trim();
 
             if (CANCEL_INPUT.equals(email)) {
-                System.out.println("취소했습니다.");
+                ConsoleUi.Cancelled();
                 return null;
             }
 
-            System.out.print("비밀번호: ");
+            ConsoleUi.Prompt("Password", PROMPT_WIDTH);
             String password = scanner.nextLine();
 
             try {
 
                 UserRole role = loginService.Login(email, password);
 
-                System.out.println("로그인되었습니다. ["
-                        + role.getDisplayName() + "] " + LoginSession.getEmail());
+                ConsoleUi.ClearScreen();
+                ConsoleUi.CompleteBox(
+                        "SIGN IN",
+                        "로그인되었습니다",
+                        ConsoleUi.InfoLine(role.getDisplayName(), LoginSession.getEmail())
+                );
+
+                ConsoleUi.PressEnter(scanner);
 
                 return role;
 
             } catch (IllegalArgumentException e) {
 
                 // 입력 실수는 메시지를 그대로 보여 주고 다시 입력받는다.
-                System.out.println("[오류] " + e.getMessage());
+                System.out.println();
+                ConsoleUi.Error(e.getMessage());
+                System.out.println();
 
             } catch (IllegalStateException e) {
 
                 // DB 연결 실패 등 다시 입력해도 해결되지 않는 문제는 화면을 빠져나간다.
-                System.out.println("로그인 처리 중 문제가 발생했습니다. 잠시 후 다시 시도해주세요.");
+                System.out.println();
+                ConsoleUi.Error("로그인 처리 중 문제가 발생했습니다. 잠시 후 다시 시도해 주세요.");
                 return null;
             }
         }
