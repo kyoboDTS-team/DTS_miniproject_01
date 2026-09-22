@@ -1,5 +1,4 @@
 
-=======
 # 🛒 TERMINAL MARKET
 
 <p align="center">
@@ -23,8 +22,8 @@
 | 항목 | 내용 |
 | :--- | :--- |
 | **프로젝트명** | TERMINAL MARKET |
-| **개발 기간** | 2026.09 ~ 진행 중 |
-| **개발 인원** | 4명 |
+| **개발 기간** | 2026.09.16 ~ 2026.09.22 (완료) |
+| **개발 인원** | 4명 (팀명: TMT) |
 | **개발 형태** | Java Console Application |
 | **주요 목적** | Java + MyBatis + PostgreSQL 기반 CRUD 및 주문 트랜잭션 구현 |
 | **대상 플랫폼** | PC Console |
@@ -81,52 +80,55 @@ PostgreSQL
 
 ## 👤 사용자 / 인증
 
-- 회원가입
-- 로그인 / 로그아웃
-- 회원 / 관리자 권한 분리
-- 회원정보 조회 및 수정
-- 비회원 주문 지원
+- 회원가입 (정규식 이메일 · 비밀번호 · 연락처 유효성 검증)
+- SHA-256 Salt 기반 비밀번호 단방향 암호화
+- 로그인 / 로그아웃 (LoginSession 싱글톤 인메모리 관리)
+- 회원 / 관리자 권한 분리 (RBAC)
+- 회원정보 조회 및 수정, 비밀번호 변경 (마이페이지)
+- 비회원 주문 및 주문 조회 지원
 
 ## 📦 상품
 
 - 상품 등록 / 수정 / 삭제
-- 상품 전체 조회
-- 카테고리 / 가격 조건 조회
-- 상품 판매 상태 관리
-- 계층형 카테고리 관리
+- 상품 전체 조회 (페이징 콘솔 테이블)
+- 계층형 카테고리(Self FK 대분류-소분류) 탐색
+- 카테고리 / 가격대 / 키워드 조건 복합 검색
+- 상품 상세 조회 및 시리얼 관리 대상(`requires_serial`) 여부 확인
+- 상품 판매 상태(`SELLING` / `STOPPED`) 관리
 
 ## 🛒 장바구니
 
-- 상품 추가
-- 수량 변경
-- 상품 삭제
+- 세션 기반 사용자별 독립 장바구니 식별 및 격리
+- 상품 추가 (수량 누적)
+- 수량 변경 및 개별 품목 삭제
 - 장바구니 전체 비우기
-- 회원 / 비회원 주문 연결
+- 장바구니 기반 다중 품목 일괄 주문 연결
 
 ## 📋 주문
 
-- 회원 주문
-- 비회원 주문
-- 주문번호 생성
-- 주문 상세 조회
-- 주문 전체 반품
-- 주문 트랜잭션 처리
+- 회원 장바구니 일괄 주문
+- 비회원 즉시 단품 주문
+- 외부 노출용 주문번호 자동 채번 (`OrderNoGenerator`)
+- 단일 트랜잭션 주문 결제 (재고 차감 + 시리얼 매핑 + 주문서 생성)
+- 주문 내역 상세 및 배정된 고유 시리얼 번호 조회
+- 주문 전체 반품 (`CONFIRMED` → `RETURNED` 상태 전이, 재고 및 시리얼 상태 원복)
 
 ## 📊 재고 / 시리얼
 
-- 상품 재고 입고 / 조정
-- 재고 변경 이력 관리
-- 시리얼 번호 등록
-- 시리얼 상품 판매 상태 관리
-- 주문 및 반품 시 재고 자동 반영
+- 상품 재고 입고 / 수량 조정
+- 재고 변경 감사 이력 관리 (`StockAdjustment`: 누가, 언제, 왜, 얼마나)
+- 안전재고(`reorder_level`) 기준 재고 부족 / 품절 실시간 모니터링
+- 단품별 고유 시리얼 번호 개별 등록 (`product_unit`)
+- 시리얼 상품 판매 상태(`AVAILABLE` ↔ `SOLD`) 관리
+- 재고 정합성 자동 검사 (`SerialStockConsistency`: DB 재고 = AVAILABLE 시리얼 수)
 
 ## 📈 관리자
 
-- 회원 관리
-- 상품 / 카테고리 관리
-- 주문 / 반품 관리
-- 매출 / 상품 통계
-- CSV Import / Export
+- 회원 정보 관리
+- 상품 및 계층형 카테고리 트리 관리
+- 주문 및 반품 통합 관리
+- 매출 통계 대시보드 (총 누적 매출, 당일 매출, 베스트셀러 Top 5)
+- 대용량 상품 / 시리얼 CSV Import 및 Export
 
 ---
 
@@ -159,13 +161,13 @@ flowchart LR
 | :--- | :--- |
 | `app_user` | 로그인 계정 및 권한 |
 | `customer` | 일반 회원 정보 |
-| `category` | 상품 카테고리 |
-| `product` | 상품 정보 |
-| `product_unit` | 시리얼 관리 개별 상품 |
-| `orders` | 주문 |
-| `order_item` | 주문 상품 |
-| `order_item_unit` | 주문 상품 ↔ 시리얼 연결 |
-| `stock_adjustment` | 재고 변경 이력 |
+| `category` | 상품 카테고리 (계층형 Self FK) |
+| `product` | 상품 마스터 정보 |
+| `product_unit` | 시리얼 관리 개별 단품 |
+| `orders` | 주문 헤더 (회원/비회원) |
+| `order_item` | 주문 상세 품목 (스냅샷 단가) |
+| `order_item_unit` | 주문 품목 ↔ 시리얼 출고 매핑 이력 |
+| `stock_adjustment` | 재고 변경 감사 로그 |
 
 ### 주요 관계
 
@@ -173,16 +175,16 @@ flowchart LR
 app_user
    └─ customer
 
-category
+category (Self FK)
    └─ product
         └─ product_unit
 
 orders
    └─ order_item
-        └─ order_item_unit
+        └─ order_item_unit (product_unit 매핑)
 
 product
-   └─ stock_adjustment
+   └─ stock_adjustment (app_user 처리자 매핑)
 ```
 
 ---
@@ -196,59 +198,101 @@ src/main/java/com/team/orderapp
 │  ├─ Main.java
 │  ├─ GuestMenu.java
 │  ├─ MemberMenu.java
-│  ├─ AdminMenu.java
-│  └─ ProductCommandMenu.java
+│  └─ AdminMenu.java
 │
 ├─ common
 │  ├─ DbConnectionFactory.java
 │  ├─ ConsoleInput.java
+│  ├─ ConsoleUi.java
 │  ├─ BusinessException.java
 │  └─ OrderNoGenerator.java
 │
 ├─ auth
 │  ├─ AppUser.java
+│  ├─ UserRole.java
 │  ├─ LoginSession.java
+│  ├─ LoginMenu.java
+│  ├─ SignupMenu.java
 │  ├─ AuthService.java
-│  └─ AppUserDao.java
+│  ├─ LoginService.java
+│  ├─ AppUserDao.java
+│  └─ PasswordHasher.java
 │
 ├─ customer
 │  ├─ Customer.java
+│  ├─ CustomerMenu.java
+│  ├─ MyInfoMenu.java
 │  ├─ CustomerService.java
 │  └─ CustomerDao.java
-│
-├─ cart
-│  ├─ Cart.java
-│  ├─ CartItem.java
-│  └─ CartService.java
 │
 ├─ product
 │  ├─ Product.java
 │  ├─ Category.java
 │  ├─ ProductUnit.java
+│  ├─ ProductMenu.java
+│  ├─ ProductListMenu.java
+│  ├─ ProductDetailMenu.java
+│  ├─ ProductConditionMenu.java
+│  ├─ ProductCommandMenu.java
+│  ├─ CategoryMenu.java
 │  ├─ ProductService.java
-│  └─ ProductDao.java
+│  ├─ CategoryService.java
+│  ├─ ProductDao.java
+│  ├─ ProductUnitDao.java
+│  └─ CategoryDao.java
+│
+├─ cart
+│  ├─ Cart.java
+│  ├─ CartItem.java
+│  ├─ CartMenu.java
+│  ├─ CartService.java
+│  └─ CartDao.java
+│
+├─ order
+│  ├─ model
+│  │  ├─ Order.java
+│  │  ├─ OrderItem.java
+│  │  ├─ OrderItemUnit.java
+│  │  └─ OrderStatus.java
+│  │
+│  ├─ command
+│  │  ├─ OrderCommandMenu.java
+│  │  ├─ OrderCommandService.java
+│  │  └─ OrderCommandDao.java
+│  │
+│  └─ query
+│     ├─ OrderQueryMenu.java
+│     ├─ OrderAdminMenu.java
+│     ├─ OrderQueryService.java
+│     ├─ OrderQueryDao.java
+│     ├─ OrderDetailView.java
+│     ├─ OrderItemDetailView.java
+│     └─ OrderSummaryView.java
 │
 ├─ stock
 │  ├─ StockAdjustment.java
+│  ├─ StockAdjustmentHistory.java
+│  ├─ SerialStockConsistency.java
+│  ├─ StockMenu.java
 │  ├─ StockService.java
 │  └─ StockAdjustmentDao.java
 │
-├─ order
-│  ├─ Order.java
-│  ├─ OrderItem.java
-│  ├─ OrderItemUnit.java
-│  ├─ OrderCommandService.java
-│  └─ OrderQueryService.java
-│
 ├─ report
-│  └─ ReportService.java
+│  ├─ AdminDashboardStat.java
+│  ├─ DailySalesStat.java
+│  ├─ ProductSalesStat.java
+│  ├─ ReportMenu.java
+│  ├─ ReportService.java
+│  └─ ReportDao.java
 │
 └─ export
    ├─ CsvExporter.java
-   └─ CsvImporter.java
+   ├─ CsvExportService.java
+   ├─ CsvImporter.java
+   ├─ ProductCsvMenu.java
+   ├─ ProductCsvService.java
+   └─ SerialCsvRow.java
 ```
-
-> 실제 구현 진행에 따라 일부 클래스 및 패키지 구조는 변경될 수 있습니다.
 
 ---
 
@@ -273,9 +317,8 @@ PostgreSQL에서 프로젝트용 데이터베이스를 생성합니다.
 프로젝트에서 제공하는 SQL을 순서대로 실행합니다.
 
 ```text
-1. Schema SQL
-2. Category Seed SQL
-3. Test / Dummy Data SQL
+1. Schema SQL (sql/schema.sql)
+2. Category Seed SQL (sql/seed.sql)
 ```
 
 ---
@@ -283,7 +326,7 @@ PostgreSQL에서 프로젝트용 데이터베이스를 생성합니다.
 ## 3. DB 접속 설정
 
 ```text
-src/main/resources/config/db.properties
+config/db.properties
 ```
 
 예시:
@@ -317,10 +360,10 @@ com.team.orderapp.app.Main
 
 | 이름 | 담당 |
 | :--- | :--- |
-| **백종민** | 상품 / 카테고리, 재고, 시리얼, 상품 CSV, DB 구조 |
-| **이태은** | 회원정보, 회원가입 입력 및 검증 |
-| **김상진** | 로그인 / 인증 / 세션, 주문 생성, 반품, 트랜잭션 |
-| **박형준** | 메인 메뉴, 상품 조회, 장바구니, 주문 조회, 통계 |
+| **백종민** | 관리자 기능(상품 / 카테고리 / 재고 / 시리얼), 관리자 대시보드 및 통계, CSV 연동, DB 구조 및 GitHub 관리, 문서화 총괄 |
+| **김상진** | 로그인 인증 및 세션(`LoginSession`), 장바구니(`Cart`), 구매 및 반품 주문 트랜잭션 로직 |
+| **박형준** | 전체 기능 통합(Integration), 상품 조회(전체/계층 카테고리/복합 조건), 주문 내역 상세 조회, 콘솔 표준 UI 템플릿 |
+| **이태은** | 회원가입 및 정규식 입력값 검증, 회원 정보 관리, 마이페이지(내 정보 수정, 비밀번호 재설정) |
 
 ---
 
@@ -336,22 +379,22 @@ com.team.orderapp.app.Main
   </tr>
   <tr>
     <td align="center"><b>백종민</b></td>
-    <td>상품 / 카테고리, 재고, 시리얼, 상품 CSV, DB 구조</td>
-  </tr>
-
-  <tr>
-    <td align="center"><b>이태은</b></td>
-    <td>회원정보, 회원가입 입력 및 검증</td>
+    <td>관리자 기능(상품 / 카테고리 / 재고 / 시리얼), 관리자 대시보드 및 통계, CSV 연동, DB 구조 및 GitHub 관리, 문서화 총괄</td>
   </tr>
 
   <tr>
     <td align="center"><b>김상진</b></td>
-    <td>로그인 / 인증 / 세션, 주문 생성, 반품, 트랜잭션</td>
+    <td>로그인 인증 및 세션(`LoginSession`), 장바구니(`Cart`), 구매 및 반품 주문 트랜잭션 로직</td>
   </tr>
 
   <tr>
     <td align="center"><b>박형준</b></td>
-    <td>메인 메뉴, 상품 조회, 장바구니, 주문 조회, 통계</td>
+    <td>전체 기능 통합(Integration), 상품 조회(전체/계층 카테고리/복합 조건), 주문 내역 상세 조회, 콘솔 표준 UI 템플릿</td>
+  </tr>
+
+  <tr>
+    <td align="center"><b>이태은</b></td>
+    <td>회원가입 및 정규식 입력값 검증, 회원 정보 관리, 마이페이지(내 정보 수정, 비밀번호 재설정)</td>
   </tr>
 </table>
 
@@ -509,43 +552,43 @@ RETURNED
 - [x] 테스트 데이터 구성
 - [x] Product 모델 DB 매핑
 - [x] 상품 등록 기본 기능
-- [ ] 상품 관리 기능
-- [ ] 상품 조회
-- [ ] 회원가입 / 로그인
-- [ ] 장바구니
-- [ ] 주문 / 반품
-- [ ] 재고 관리
-- [ ] 시리얼 관리
-- [ ] 통계
-- [ ] CSV
-- [ ] 통합 테스트
+- [x] 상품 관리 기능 (수정 / 삭제 / 계층 카테고리)
+- [x] 상품 조회 (전체 / 계층 카테고리 / 가격·키워드 복합 조건)
+- [x] 회원가입 / 로그인 (정규식 검증 & SHA-256 암호화 & 세션 격리)
+- [x] 장바구니 (회원별 독립 장바구니 식별 & 수량 관리)
+- [x] 주문 / 반품 (단일 트랜잭션 결제 & AVAILABLE 시리얼 매핑 / 복구)
+- [x] 재고 관리 (입고 수량 조정 & StockAdjustment 감사 로그)
+- [x] 시리얼 관리 (단품 S/N 등록 & SerialStockConsistency 정합성 검사)
+- [x] 통계 (누적/당일 매출, 베스트셀러 Top 5 통합 대시보드)
+- [x] CSV (상품 / 시리얼 대량 Import & Export)
+- [x] 통합 테스트 및 QA (체크리스트 기반 전수 검증 통과)
 
 ---
 
 # 📷 Preview
 
-> 프로젝트 구현 완료 후 콘솔 실행 화면 또는 주요 기능 GIF를 추가할 예정입니다.
+> 프로젝트 최종 콘솔 실행 화면 및 주요 사용자 흐름입니다.
 
 ```text
 TERMINAL MARKET
 
 [Guest]
-상품 조회 → 장바구니 → 주문
+상품 조회(계층/조건) → 장바구니 → 비회원 즉시 주문 → 주문번호 조회 / 반품
 
 [Member]
-로그인 → 상품 조회 → 주문 → 주문 조회 / 반품
+회원가입 / 로그인 → 상품 조회 → 장바구니 담기 → 일괄 주문 결제 → 마이페이지(시리얼 조회 / 반품 / 정보수정)
 
 [Admin]
-상품 → 재고 → 회원 → 주문 → 통계
+상품 등록/수정 → 카테고리 관리 → 재고 입고 & 시리얼 관리 → 실시간 재고 모니터링 → 통합 통계 대시보드 → CSV 입출력
 ```
 
 ---
 
 ## 📎 Repository Checklist
 
-- [ ] Repository Public 설정 확인
+- [x] Repository Public 설정 확인
 - [x] 프로젝트 제목 작성
-- [ ] 프로젝트 대표 이미지 추가
+- [x] 프로젝트 대표 이미지 추가
 - [x] 프로젝트 소개 작성
 - [x] 개발 기간 / 인원 작성
 - [x] 개발 환경 작성
@@ -556,4 +599,4 @@ TERMINAL MARKET
 - [x] Branch Convention 작성
 - [x] PR Guide 작성
 - [x] 주요 기능 작성
-- [ ] 프로젝트 시연 영상 추가
+- [x] 최종 발표 자료 및 대본, 보고서 산출물 구비
