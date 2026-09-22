@@ -1,5 +1,7 @@
 package com.team.orderapp.product;
 
+import com.team.orderapp.common.ConsoleUi;
+
 import java.util.List;
 import java.util.Scanner;
 
@@ -31,7 +33,7 @@ public class CategoryMenu {
             PrintMenu();
 
             String input =
-                    scanner.nextLine().trim();
+                    ConsoleUi.Choice(scanner.nextLine());
 
             switch (input) {
 
@@ -55,9 +57,8 @@ public class CategoryMenu {
                     return;
 
                 default:
-                    System.out.println(
-                            "올바른 메뉴 번호를 입력해 주세요."
-                    );
+                    ConsoleUi.InvalidMenu();
+                    ConsoleUi.PressEnter(scanner);
             }
         }
     }
@@ -74,34 +75,28 @@ public class CategoryMenu {
             List<Category> categories =
                     categoryService.FindAll();
 
-            System.out.println();
-            System.out.println(
-                    "========================================"
-            );
-            System.out.println(
-                    "             카테고리 목록"
-            );
-            System.out.println(
-                    "========================================"
-            );
+            ConsoleUi.ClearScreen();
+        ConsoleUi.ScreenHeader("CATEGORY / LIST", "카테고리 목록");
 
             if (categories.isEmpty()) {
 
-                System.out.println(
-                        "등록된 카테고리가 없습니다."
-                );
+                System.out.println();
+                ConsoleUi.Warn("등록된 카테고리가 없습니다.");
+                ConsoleUi.PressEnter(scanner);
 
                 return;
             }
 
-
+            System.out.println();
             System.out.println(
-                    "ID | 상위ID | 코드 | 이름"
+                    ConsoleUi.Cyan(
+                            ConsoleUi.PadRight("ID", 6)
+                                    + ConsoleUi.PadRight("상위ID", 9)
+                                    + ConsoleUi.PadRight("코드", 10)
+                                    + ConsoleUi.PadRight("이름", 20)
+                    )
             );
-            System.out.println(
-                    "----------------------------------------"
-            );
-
+            ConsoleUi.Divider(45);
 
             for (Category category : categories) {
 
@@ -111,23 +106,21 @@ public class CategoryMenu {
                                 : category.getParentCategoryId().toString();
 
                 System.out.println(
-                        category.getCategoryId()
-                                + " | "
-                                + parentId
-                                + " | "
-                                + category.getCategoryCode()
-                                + " | "
-                                + category.getCategoryName()
+                        ConsoleUi.PadRight(String.valueOf(category.getCategoryId()), 6)
+                                + ConsoleUi.PadRight(parentId, 9)
+                                + ConsoleUi.PadRight(category.getCategoryCode(), 10)
+                                + ConsoleUi.PadRight(category.getCategoryName(), 20)
                 );
             }
 
+            ConsoleUi.Divider(45);
+
         } catch (Exception e) {
 
-            System.out.println(
-                    "카테고리 조회 실패: "
-                            + e.getMessage()
-            );
+            ConsoleUi.Error("카테고리 조회 중 문제가 발생했습니다.");
         }
+
+        ConsoleUi.PressEnter(scanner);
     }
 
 
@@ -137,16 +130,8 @@ public class CategoryMenu {
 
     private void RegisterCategory() {
 
-        System.out.println();
-        System.out.println(
-                "========================================"
-        );
-        System.out.println(
-                "             카테고리 등록"
-        );
-        System.out.println(
-                "========================================"
-        );
+        ConsoleUi.ClearScreen();
+        ConsoleUi.ScreenHeader("CATEGORY / NEW", "카테고리 등록");
 
 
         try {
@@ -157,21 +142,21 @@ public class CategoryMenu {
 
             category.setCategoryCode(
                     ReadRequiredString(
-                            "카테고리 코드 > "
+                            "카테고리 코드"
                     )
             );
 
 
             category.setCategoryName(
                     ReadRequiredString(
-                            "카테고리 이름 > "
+                            "카테고리 이름"
                     )
             );
 
 
             Long parentId =
                     ReadLong(
-                            "상위 카테고리 ID (상위 카테고리는 0) > "
+                            "상위 카테고리 ID (상위 카테고리는 0)"
                     );
 
 
@@ -190,18 +175,15 @@ public class CategoryMenu {
 
             if (result) {
 
-                System.out.println(
-                        "카테고리가 정상적으로 등록되었습니다."
-                );
+                ConsoleUi.Success("카테고리가 정상적으로 등록되었습니다.");
             }
 
         } catch (Exception e) {
 
-            System.out.println(
-                    "카테고리 등록 실패: "
-                            + e.getMessage()
-            );
+            ConsoleUi.Error("카테고리 등록에 실패했습니다. " + e.getMessage());
         }
+
+        ConsoleUi.PressEnter(scanner);
     }
 
 
@@ -211,16 +193,8 @@ public class CategoryMenu {
 
     private void UpdateCategory() {
 
-        System.out.println();
-        System.out.println(
-                "========================================"
-        );
-        System.out.println(
-                "             카테고리 수정"
-        );
-        System.out.println(
-                "========================================"
-        );
+        ConsoleUi.ClearScreen();
+        ConsoleUi.ScreenHeader("CATEGORY / EDIT", "카테고리 수정");
 
 
         try {
@@ -231,28 +205,28 @@ public class CategoryMenu {
 
             category.setCategoryId(
                     ReadLong(
-                            "수정할 카테고리 ID > "
+                            "수정할 카테고리 ID"
                     )
             );
 
 
             category.setCategoryCode(
                     ReadRequiredString(
-                            "변경할 카테고리 코드 > "
+                            "변경할 카테고리 코드"
                     )
             );
 
 
             category.setCategoryName(
                     ReadRequiredString(
-                            "변경할 카테고리 이름 > "
+                            "변경할 카테고리 이름"
                     )
             );
 
 
             Long parentId =
                     ReadLong(
-                            "상위 카테고리 ID (상위 카테고리는 0) > "
+                            "상위 카테고리 ID (상위 카테고리는 0)"
                     );
 
 
@@ -270,18 +244,15 @@ public class CategoryMenu {
 
             if (result) {
 
-                System.out.println(
-                        "카테고리가 정상적으로 수정되었습니다."
-                );
+                ConsoleUi.Success("카테고리가 정상적으로 수정되었습니다.");
             }
 
         } catch (Exception e) {
 
-            System.out.println(
-                    "카테고리 수정 실패: "
-                            + e.getMessage()
-            );
+            ConsoleUi.Error("카테고리 수정에 실패했습니다. " + e.getMessage());
         }
+
+        ConsoleUi.PressEnter(scanner);
     }
 
 
@@ -291,29 +262,23 @@ public class CategoryMenu {
 
     private void DeleteCategory() {
 
-        System.out.println();
-        System.out.println(
-                "========================================"
-        );
-        System.out.println(
-                "             카테고리 삭제"
-        );
-        System.out.println(
-                "========================================"
-        );
+        ConsoleUi.ClearScreen();
+        ConsoleUi.ScreenHeader("CATEGORY / DELETE", "카테고리 삭제");
 
 
         try {
 
             Long categoryId =
                     ReadLong(
-                            "삭제할 카테고리 ID > "
+                            "삭제할 카테고리 ID"
                     );
 
 
-            System.out.print(
-                    "정말 삭제하시겠습니까? (Y/N) > "
-            );
+            System.out.println();
+            ConsoleUi.Warn("삭제하면 되돌릴 수 없습니다.");
+            ConsoleUi.YesNoOptions("삭제", "취소");
+            System.out.println();
+            ConsoleUi.Prompt("정말 삭제하시겠습니까? (Y/N)");
 
 
             String confirm =
@@ -324,9 +289,8 @@ public class CategoryMenu {
 
             if (!confirm.equals("Y")) {
 
-                System.out.println(
-                        "카테고리 삭제를 취소했습니다."
-                );
+                ConsoleUi.Cancelled();
+                ConsoleUi.PressEnter(scanner);
 
                 return;
             }
@@ -339,18 +303,15 @@ public class CategoryMenu {
 
             if (result) {
 
-                System.out.println(
-                        "카테고리가 정상적으로 삭제되었습니다."
-                );
+                ConsoleUi.Success("카테고리가 정상적으로 삭제되었습니다.");
             }
 
         } catch (Exception e) {
 
-            System.out.println(
-                    "카테고리 삭제 실패: "
-                            + e.getMessage()
-            );
+            ConsoleUi.Error("카테고리 삭제에 실패했습니다. " + e.getMessage());
         }
+
+        ConsoleUi.PressEnter(scanner);
     }
 
 
@@ -360,44 +321,18 @@ public class CategoryMenu {
 
     private void PrintMenu() {
 
+        ConsoleUi.ClearScreen();
+        ConsoleUi.ScreenHeader("ADMIN / CATEGORY", "카테고리 관리");
+
+        ConsoleUi.Section("카테고리");
+        ConsoleUi.MenuItem("01", "카테고리 목록 조회");
+        ConsoleUi.MenuItem("02", "카테고리 등록");
+        ConsoleUi.MenuItem("03", "카테고리 수정");
+        ConsoleUi.MenuItem("04", "카테고리 삭제");
+        ConsoleUi.MenuItem("00", "이전");
+
         System.out.println();
-        System.out.println(
-                "========================================"
-        );
-        System.out.println(
-                "             카테고리 관리"
-        );
-        System.out.println(
-                "========================================"
-        );
-
-        System.out.println(
-                "1. 카테고리 목록 조회"
-        );
-
-        System.out.println(
-                "2. 카테고리 등록"
-        );
-
-        System.out.println(
-                "3. 카테고리 수정"
-        );
-
-        System.out.println(
-                "4. 카테고리 삭제"
-        );
-
-        System.out.println(
-                "0. 이전"
-        );
-
-        System.out.println(
-                "----------------------------------------"
-        );
-
-        System.out.print(
-                "선택 > "
-        );
+        ConsoleUi.Prompt("선택");
     }
 
 
@@ -411,7 +346,7 @@ public class CategoryMenu {
 
         while (true) {
 
-            System.out.print(message);
+            ConsoleUi.Prompt(message);
 
             String value =
                     scanner.nextLine().trim();
@@ -420,9 +355,7 @@ public class CategoryMenu {
                 return value;
             }
 
-            System.out.println(
-                    "값을 입력해 주세요."
-            );
+            ConsoleUi.Error("값을 입력해 주세요.");
         }
     }
 
@@ -435,7 +368,7 @@ public class CategoryMenu {
 
             try {
 
-                System.out.print(message);
+                ConsoleUi.Prompt(message);
 
                 return Long.parseLong(
                         scanner.nextLine().trim()
@@ -443,9 +376,7 @@ public class CategoryMenu {
 
             } catch (NumberFormatException e) {
 
-                System.out.println(
-                        "숫자를 입력해 주세요."
-                );
+                ConsoleUi.Error("숫자를 입력해 주세요.");
             }
         }
     }

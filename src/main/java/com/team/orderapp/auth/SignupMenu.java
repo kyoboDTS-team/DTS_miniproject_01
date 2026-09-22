@@ -1,5 +1,6 @@
 package com.team.orderapp.auth;
 
+import com.team.orderapp.common.ConsoleUi;
 import com.team.orderapp.customer.CustomerService;
 
 import java.sql.SQLException;
@@ -15,6 +16,9 @@ public class SignupMenu {
     private static final String EMAIL_PATTERN = "^[\\w.-]+@[\\w.-]+\\.[a-zA-Z]{2,}$";
     private static final String PHONE_PATTERN = "^01[016789]-?\\d{3,4}-?\\d{4}$";
     private static final String CANCEL_INPUT = "0";
+
+    // 연속 입력 화면에서 필드 이름 칸의 너비 (계획서 7장)
+    private static final int PROMPT_WIDTH = 16;
     // app_user.email varchar(254), customer.customer_name varchar(50) — 실제 DB 컬럼 길이에 맞춤 (2026-09-18 DBeaver로 확인)
     private static final int EMAIL_MAX_LENGTH = 254;
     private static final int NAME_MAX_LENGTH = 50;
@@ -35,7 +39,7 @@ public class SignupMenu {
      */
     private boolean IsCancelled(String input) {
         if (CANCEL_INPUT.equals(input)) {
-            System.out.println("취소했습니다.");
+            ConsoleUi.Cancelled();
             return true;
         }
         return false;
@@ -45,21 +49,26 @@ public class SignupMenu {
      * 회원가입 정보를 입력받아 형식을 검증한 뒤, AuthService.SignUp()으로 계정+고객 정보를 저장합니다.
      */
     public void SignUp() {
-        System.out.println("\n=== 회원가입 (입력 중 언제든 0을 입력하면 취소) ===");
+        ConsoleUi.ClearScreen();
+        ConsoleUi.ScreenHeader("SIGN UP", "회원가입");
+
+        System.out.println();
+        ConsoleUi.Info("입력 중 언제든 0을 입력하면 취소합니다.");
+        System.out.println();
 
         String email;
         while (true) {
-            System.out.print("이메일(로그인 ID): ");
+            ConsoleUi.Prompt("이메일", PROMPT_WIDTH);
             email = scanner.nextLine().trim().toLowerCase();
             if (IsCancelled(email)) {
                 return;
             }
             if (!email.matches(EMAIL_PATTERN)) {
-                System.out.println("이메일 형식이 올바르지 않습니다. 다시 입력해주세요.");
+                ConsoleUi.Error("이메일 형식이 올바르지 않습니다. 다시 입력해 주세요.");
                 continue;
             }
             if (email.length() > EMAIL_MAX_LENGTH) {
-                System.out.println("이메일이 너무 깁니다. (" + EMAIL_MAX_LENGTH + "자 이하)");
+                ConsoleUi.Error("이메일이 너무 깁니다. (" + EMAIL_MAX_LENGTH + "자 이하)");
                 continue;
             }
 
@@ -67,18 +76,19 @@ public class SignupMenu {
             try {
                 emailTaken = new AuthService().IsEmailTaken(email);
             } catch (IllegalStateException e) {
-                System.out.println("DB 연결에 실패했습니다. 잠시 후 다시 시도해주세요.");
+                ConsoleUi.Error("DB 연결에 실패했습니다. 잠시 후 다시 시도해 주세요.");
                 return;
             } catch (Exception e) {
-                System.out.println("통신 환경이 원활하지 않습니다. 잠시 후 다시 시도해주세요.");
+                ConsoleUi.Error("통신 환경이 원활하지 않습니다. 잠시 후 다시 시도해 주세요.");
                 return;
             }
             if (emailTaken) {
-                System.out.println("이미 가입된 이메일입니다. 다시 입력해주세요.");
+                ConsoleUi.Error("이미 사용 중인 이메일입니다. 다시 입력해 주세요.");
                 continue;
             }
 
-            System.out.print("입력하신 이메일이 \"" + email + "\" 맞습니까? (y: 확인, 0: 취소, 그 외: 다시 입력): ");
+            ConsoleUi.Success("사용 가능한 이메일입니다.");
+            ConsoleUi.Prompt("\"" + email + "\" 맞습니까? (y: 확인, 0: 취소, 그 외: 다시 입력)");
             String confirm = scanner.nextLine().trim();
             if (IsCancelled(confirm)) {
                 return;
@@ -93,7 +103,8 @@ public class SignupMenu {
         passwordStep:
         while (true) {
             while (true) {
-                System.out.print("비밀번호 (8~20자, 대문자/소문자/숫자/특수문자 각 1개 이상, 공백 불가): ");
+                ConsoleUi.Warn("비밀번호는 8~20자이며 대문자/소문자/숫자/특수문자를 각각 1개 이상 포함해야 합니다.");
+                ConsoleUi.Prompt("비밀번호", PROMPT_WIDTH);
                 password = scanner.nextLine();
                 if (IsCancelled(password.trim())) {
                     return;
@@ -104,12 +115,12 @@ public class SignupMenu {
                     break;
                 }
                 for (String problem : problems) {
-                    System.out.println(problem);
+                    ConsoleUi.Error(problem);
                 }
             }
 
             while (true) {
-                System.out.print("비밀번호 확인 (0: 취소, b: 비밀번호 다시 입력): ");
+                ConsoleUi.Prompt("비밀번호 확인", PROMPT_WIDTH);
                 passwordConfirm = scanner.nextLine();
                 if (IsCancelled(passwordConfirm.trim())) {
                     return;
@@ -120,23 +131,23 @@ public class SignupMenu {
                 if (password.equals(passwordConfirm)) {
                     break passwordStep;
                 }
-                System.out.println("비밀번호가 일치하지 않습니다. 다시 입력해주세요. (b: 비밀번호부터 다시 입력)");
+                ConsoleUi.Error("비밀번호가 일치하지 않습니다. 다시 입력해 주세요. (b: 비밀번호부터 다시 입력)");
             }
         }
 
         String customerName;
         while (true) {
-            System.out.print("이름: ");
+            ConsoleUi.Prompt("이름", PROMPT_WIDTH);
             customerName = scanner.nextLine().trim();
             if (IsCancelled(customerName)) {
                 return;
             }
             if (customerName.isEmpty()) {
-                System.out.println("이름은 필수 입력 항목입니다. 다시 입력해주세요.");
+                ConsoleUi.Error("이름은 필수 입력 항목입니다. 다시 입력해 주세요.");
                 continue;
             }
             if (customerName.length() > NAME_MAX_LENGTH) {
-                System.out.println("이름이 너무 깁니다. (" + NAME_MAX_LENGTH + "자 이하)");
+                ConsoleUi.Error("이름이 너무 깁니다. (" + NAME_MAX_LENGTH + "자 이하)");
                 continue;
             }
             break;
@@ -144,13 +155,13 @@ public class SignupMenu {
 
         String phone;
         while (true) {
-            System.out.print("전화번호 (예: 01012345678): ");
+            ConsoleUi.Prompt("연락처", PROMPT_WIDTH);
             phone = scanner.nextLine().trim();
             if (IsCancelled(phone)) {
                 return;
             }
             if (!phone.matches(PHONE_PATTERN)) {
-                System.out.println("전화번호 형식이 올바르지 않습니다. 다시 입력해주세요.");
+                ConsoleUi.Error("전화번호 형식이 올바르지 않습니다. 다시 입력해 주세요.");
                 continue;
             }
 
@@ -158,28 +169,33 @@ public class SignupMenu {
             try {
                 phoneTaken = new CustomerService().IsPhoneTaken(phone);
             } catch (IllegalStateException e) {
-                System.out.println("DB 연결에 실패했습니다. 잠시 후 다시 시도해주세요.");
+                ConsoleUi.Error("DB 연결에 실패했습니다. 잠시 후 다시 시도해 주세요.");
                 return;
             } catch (Exception e) {
-                System.out.println("통신 환경이 원활하지 않습니다. 잠시 후 다시 시도해주세요.");
+                ConsoleUi.Error("통신 환경이 원활하지 않습니다. 잠시 후 다시 시도해 주세요.");
                 return;
             }
             if (phoneTaken) {
-                System.out.println("이미 가입된 전화번호입니다. 다시 입력해주세요.");
+                ConsoleUi.Error("이미 사용 중인 전화번호입니다. 다시 입력해 주세요.");
                 continue;
             }
 
             break;
         }
 
-        System.out.println("\n=== 입력하신 정보 확인 ===");
-        System.out.println("이메일   : " + email);
-        System.out.println("이름     : " + customerName);
-        System.out.println("전화번호 : " + phone);
-        System.out.print("\n이 정보로 가입하시겠습니까? (y: 가입, 0 또는 그 외 입력: 취소): ");
+        System.out.println();
+        ConsoleUi.Divider();
+        ConsoleUi.Field("이메일", email, 10);
+        ConsoleUi.Field("이름", customerName, 10);
+        ConsoleUi.Field("연락처", phone, 10);
+        ConsoleUi.Divider();
+        System.out.println();
+        ConsoleUi.YesNoOptions("가입", "취소");
+        System.out.println();
+        ConsoleUi.Prompt("입력한 정보로 가입하시겠습니까? (Y/N)");
         String finalConfirm = scanner.nextLine().trim();
         if (!"y".equalsIgnoreCase(finalConfirm)) {
-            System.out.println("취소했습니다.");
+            ConsoleUi.Cancelled();
             return;
         }
 
@@ -187,36 +203,40 @@ public class SignupMenu {
         try {
             signedUp = new AuthService().SignUp(email, password, customerName, phone);
         } catch (IllegalStateException e) {
-            System.out.println("DB 연결에 실패했습니다. 잠시 후 다시 시도해주세요.");
+            ConsoleUi.Error("DB 연결에 실패했습니다. 잠시 후 다시 시도해 주세요.");
             return;
         } catch (Exception e) {
             if (IsDuplicateEmail(e)) {
-                System.out.println("이미 가입된 이메일입니다.");
+                ConsoleUi.Error("이미 사용 중인 이메일입니다.");
             } else {
-                System.out.println("통신 환경이 원활하지 않습니다. 잠시 후 다시 시도해주세요.");
+                ConsoleUi.Error("통신 환경이 원활하지 않습니다. 잠시 후 다시 시도해 주세요.");
             }
             return;
         }
 
         if (!signedUp) {
-            System.out.println("회원가입에 실패했습니다.");
+            ConsoleUi.Error("회원가입에 실패했습니다.");
             return;
         }
 
-        System.out.println("\n=== 회원가입 완료 ===");
-        System.out.println("환영합니다 " + customerName + "님!");
+        ConsoleUi.ClearScreen();
+        ConsoleUi.CompleteBox(
+                "SIGN UP COMPLETE",
+                "환영합니다 " + customerName + "님!",
+                ConsoleUi.InfoLine("이메일", email),
+                ConsoleUi.InfoLine("연락처", phone)
+        );
+
         System.out.println();
-        System.out.println("이메일   : " + email);
-        System.out.println("이름     : " + customerName);
-        System.out.println("전화번호 : " + phone);
-        System.out.println("====================");
+        ConsoleUi.Success("회원가입이 완료되었습니다.");
 
         boolean loggedIn = AutoLogin(email, password);
 
-        String backPrompt = loggedIn ? "0을 입력하면 회원 메뉴로 이동: " : "0을 입력하면 뒤로 돌아가기: ";
-        System.out.print("\n" + backPrompt);
+        String backPrompt = loggedIn ? "0을 입력하면 회원 메뉴로 이동" : "0을 입력하면 뒤로 돌아가기";
+        System.out.println();
+        ConsoleUi.Prompt(backPrompt);
         while (!CANCEL_INPUT.equals(scanner.nextLine().trim())) {
-            System.out.print(backPrompt);
+            ConsoleUi.Prompt(backPrompt);
         }
     }
 
@@ -228,10 +248,10 @@ public class SignupMenu {
     private boolean AutoLogin(String email, String password) {
         try {
             new LoginService().Login(email, password);
-            System.out.println("\n자동으로 로그인되었습니다.");
+            ConsoleUi.Success("자동으로 로그인되었습니다.");
             return true;
         } catch (Exception e) {
-            System.out.println("\n가입은 완료되었습니다. 로그인 메뉴에서 로그인해주세요.");
+            ConsoleUi.Warn("가입은 완료되었습니다. 로그인 메뉴에서 로그인해 주세요.");
             return false;
         }
     }

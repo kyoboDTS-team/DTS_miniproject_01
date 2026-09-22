@@ -3,6 +3,7 @@ package com.team.orderapp.app;
 import com.team.orderapp.auth.LoginSession;
 import com.team.orderapp.cart.CartMenu;
 import com.team.orderapp.cart.CartService;
+import com.team.orderapp.common.ConsoleUi;
 import com.team.orderapp.customer.MyInfoMenu;
 import com.team.orderapp.order.command.OrderCommandMenu;
 import com.team.orderapp.order.query.OrderQueryMenu;
@@ -55,7 +56,7 @@ public class MemberMenu {
 
             PrintMenu();
 
-            String input = scanner.nextLine().trim();
+            String input = ConsoleUi.Choice(scanner.nextLine());
 
             switch (input) {
 
@@ -105,23 +106,24 @@ public class MemberMenu {
                     // 로그아웃 시 LoginSession 정리
                     // 장바구니도 함께 초기화
                     LoginSession.Logout();
-                    System.out.println("로그아웃합니다.");
+                    ConsoleUi.ClearScreen();
+                    ConsoleUi.Success("로그아웃되었습니다.");
 
                     // GuestMenu 또는 로그인 흐름으로 돌아가도록
                     // 상위 호출부에서 처리
                     return;
 
                 case "0":
-                    System.out.println("프로그램을 종료합니다.");
+                    ConsoleUi.ClearScreen();
+                    ConsoleUi.Info("프로그램을 종료합니다.");
 
                     // 현재는 메뉴 종료
                     // 전체 프로그램 종료 정책은 Main과 통합하면서 결정
                     return;
 
                 default:
-                    System.out.println(
-                            "올바른 메뉴 번호를 입력해 주세요."
-                    );
+                    ConsoleUi.InvalidMenu();
+                    ConsoleUi.PressEnter(scanner);
             }
         }
     }
@@ -133,27 +135,31 @@ public class MemberMenu {
 
     private void PrintMenu() {
 
+        int cartCount = cartService.GetCartCount();
+
+        ConsoleUi.ClearScreen();
+
+        ConsoleUi.MainHeader(
+                ConsoleUi.InfoLine("회원", email),
+                ConsoleUi.CartLine(cartCount)
+        );
+
+        ConsoleUi.Section("상품");
+        ConsoleUi.MenuItem("01", "전체 상품 조회");
+        ConsoleUi.MenuItem("02", "상품 조건 검색");
+        ConsoleUi.MenuItem("03", "장바구니", ConsoleUi.CartBadge(cartCount));
+
+        ConsoleUi.Section("마이페이지");
+        ConsoleUi.MenuItem("04", "주문 목록 / 상세");
+        ConsoleUi.MenuItem("05", "반품");
+        ConsoleUi.MenuItem("06", "내 정보 조회 / 수정");
+
+        ConsoleUi.Section("시스템");
+        ConsoleUi.MenuItem("07", "로그아웃");
+        ConsoleUi.MenuItem("00", "종료");
+
         System.out.println();
-        System.out.println("========================================");
-        System.out.println("             TERMINAL MARKET");
-
-        // 로그인한 사용자 표시
-        System.out.println("[회원] " + email);
-
-        // TODO: Cart 구현 완료 후 실제 장바구니 총 수량 표시
-        System.out.println("장바구니(" + cartService.GetCartCount() + ")");
-
-        System.out.println("========================================");
-        System.out.println("1. 상품 전체 조회");
-        System.out.println("2. 상품 조건 조회 (카테고리 / 가격)");
-        System.out.println("3. 장바구니 보기");
-        System.out.println("4. 내 주문 목록 / 상세");
-        System.out.println("5. 반품");
-        System.out.println("6. 내 정보 조회 / 수정");
-        System.out.println("7. 로그아웃");
-        System.out.println("0. 종료");
-        System.out.println("----------------------------------------");
-        System.out.print("선택 > ");
+        ConsoleUi.Prompt("선택");
     }
 
 }

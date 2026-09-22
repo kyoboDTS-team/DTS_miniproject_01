@@ -1,5 +1,6 @@
 package com.team.orderapp.cart;
 
+import com.team.orderapp.auth.LoginSession;
 import com.team.orderapp.common.DbConnectionFactory;
 import com.team.orderapp.product.Product;
 import com.team.orderapp.product.ProductDao;
@@ -21,6 +22,7 @@ public class CartService {
 
     // 모든 CartService 객체가 공유. 첫 상품을 담기 전까지는 null.
     // 로그아웃·사용자 전환 시 null로 되돌려야 다음 사용자에게 이전 장바구니가 보이지 않는다.
+    // (회원 장바구니는 DB에는 남아 있고, 이 static 필드만 잊는다 — ReleaseCart 참고)
     private static Long currentCartId;
 
 
@@ -57,6 +59,14 @@ public class CartService {
 
             if (cartId == null) {
                 Cart cart = new Cart();
+
+                // 회원이 로그인한 상태면 그 회원 소유로 장바구니를 만든다.
+                // 로그인 때 이미 기존 장바구니를 불러왔을 것이므로(LoadCustomerCart),
+                // 여기까지 온다는 건 그 회원이 처음 담는 것이라는 뜻이다.
+                if (LoginSession.IsCustomer()) {
+                    cart.setCustomerId(LoginSession.getCustomerId());
+                }
+
                 cartDao.InsertCart(cart);
                 cartId = cart.getCartId();
             }
@@ -227,8 +237,10 @@ public class CartService {
 
     /**
      * 현재 장바구니를 통째로 버리고 장바구니 번호를 비웁니다.
-     * 로그인·로그아웃처럼 사용자가 바뀔 때 호출합니다(비회원이 담아 둔 장바구니가
-     * 다음 사용자에게 보이면 안 되기 때문입니다).
+     *
+     * 로그인 성공 시 비회원 장바구니를 버릴 때 씁니다. 비회원 장바구니는 다음 로그인까지
+     * 유지하지 않기로 했기 때문입니다. 회원 장바구니는 DB에 남겨야 하므로 로그아웃에는
+     * 이 메서드 대신 ReleaseCart()를 씁니다.
      *
      * cart 행을 지우면 cart_item은 ON DELETE CASCADE로 함께 지워집니다.
      * 담아 둔 장바구니가 없으면 아무것도 하지 않습니다.
@@ -250,6 +262,46 @@ public class CartService {
         // DB 삭제가 끝난 뒤에 메모리 상태를 비운다.
         // try 안에서 비우면 예외가 났을 때 DB에는 남고 프로그램만 잊는 상태가 된다.
         currentCartId = null;
+    }
+
+
+    /**
+     * 현재 장바구니 번호만 잊습니다. DB의 장바구니는 지우지 않습니다.
+     *
+     * 로그아웃 때 씁니다. 회원 장바구니는 cart.customer_id로 그 회원 소유임이
+     * DB에 남아 있으니, 다음에 같은 회원이 로그인하면 LoadCustomerCart()로 다시
+     * 불러올 수 있습니다. 여기서 삭제하면(ResetCart) 매번 로그아웃할 때마다
+     * 회원 장바구니가 사라지므로, 담아 둔 상품이 없어지는 것을 막기 위해 구분했습니다.
+     */
+    public void ReleaseCart() {
+        currentCartId = null;
+    }
+
+
+    /**
+     * 로그인한 회원의 기존 장바구니를 불러와 currentCartId에 연결합니다.
+     *
+     * 회원가입 이후 한 번도 담은 적이 없으면 장바구니가 없으므로 아무 일도 하지
+     * 않습니다 — 이후 AddProduct가 처음 담을 때 그 회원 소유로 새로 만듭니다.
+     *
+     * 로그인 검증이 모두 끝난 뒤 LoginService.Login()에서만 호출합니다.
+     * (currentCartId를 덮어쓰므로, 그 전에는 비회원 장바구니를 ResetCart()로
+     * 먼저 버려야 합니다.)
+     *
+     * @param customerId 로그인한 회원의 고객 번호
+     */
+    public void LoadCustomerCart(Long customerId) {
+
+        if (customerId == null) {
+            return;
+        }
+
+        try (SqlSession session = OpenSession()) {
+
+            session.getMapper(CartDao.class)
+                    .FindCartByCustomerId(customerId)
+                    .ifPresent(cart -> currentCartId = cart.getCartId());
+        }
     }
 
 

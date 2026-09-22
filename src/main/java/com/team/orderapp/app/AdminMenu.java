@@ -1,6 +1,7 @@
 package com.team.orderapp.app;
 
 import com.team.orderapp.auth.LoginSession;
+import com.team.orderapp.common.ConsoleUi;
 import com.team.orderapp.customer.CustomerMenu;
 import com.team.orderapp.product.ProductCommandMenu;
 import com.team.orderapp.stock.StockMenu;
@@ -50,7 +51,7 @@ public class AdminMenu {
 
             PrintMenu();
 
-            String input = scanner.nextLine().trim();
+            String input = ConsoleUi.Choice(scanner.nextLine());
 
             switch (input) {
 
@@ -95,19 +96,20 @@ public class AdminMenu {
                 case "7":
 
                     LoginSession.Logout();
-                    System.out.println("로그아웃합니다.");
+                    ConsoleUi.ClearScreen();
+                    ConsoleUi.Success("로그아웃되었습니다.");
 
                     // 상위 GuestMenu / 로그인 흐름으로 복귀
                     return;
 
                 case "0":
-                    System.out.println("프로그램을 종료합니다.");
+                    ConsoleUi.ClearScreen();
+                    ConsoleUi.Info("프로그램을 종료합니다.");
                     return;
 
                 default:
-                    System.out.println(
-                            "올바른 메뉴 번호를 입력해 주세요."
-                    );
+                    ConsoleUi.InvalidMenu();
+                    ConsoleUi.PressEnter(scanner);
             }
         }
     }
@@ -119,23 +121,27 @@ public class AdminMenu {
 
     private void PrintMenu() {
 
+        ConsoleUi.ClearScreen();
+
+        ConsoleUi.AdminHeader(
+                ConsoleUi.InfoLine("관리자", email)
+        );
+
+        ConsoleUi.Section("관리");
+        ConsoleUi.MenuItem("01", "상품 / 카테고리 관리");
+        ConsoleUi.MenuItem("02", "재고 / 시리얼 관리");
+        ConsoleUi.MenuItem("03", "회원 관리");
+        ConsoleUi.MenuItem("04", "주문 / 반품 관리");
+
+        ConsoleUi.Section("리포트");
+        ConsoleUi.MenuItem("05", "통계");
+        ConsoleUi.MenuItem("06", "CSV 저장 / 불러오기");
+
+        ConsoleUi.Section("시스템");
+        ConsoleUi.MenuItem("07", "로그아웃");
+        ConsoleUi.MenuItem("00", "종료");
+
         System.out.println();
-        System.out.println("========================================");
-        System.out.println("             TERMINAL MARKET");
-
-        // 로그인한 관리자 표시
-        System.out.println("[관리자] " + email);
-
-        System.out.println("========================================");
-        System.out.println("1. 상품 / 카테고리 관리");
-        System.out.println("2. 재고 / 시리얼 관리");
-        System.out.println("3. 회원 관리");
-        System.out.println("4. 주문 / 반품 관리");
-        System.out.println("5. 통계");
-        System.out.println("6. CSV 저장 / 불러오기");
-        System.out.println("7. 로그아웃");
-        System.out.println("0. 종료");
-        System.out.println("----------------------------------------");
-        System.out.print("선택 > ");
+        ConsoleUi.Prompt("선택");
     }
 }
